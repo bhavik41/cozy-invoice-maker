@@ -4,7 +4,7 @@ import { useAppContext } from '@/context/AppContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, Upload, Database, RefreshCw, HardDrive, Shield } from 'lucide-react';
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 import { handleFileUpload } from '@/utils/helpers';
 
 const Backup = () => {

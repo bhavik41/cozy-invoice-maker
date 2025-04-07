@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
@@ -24,7 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 
 const ProductList = () => {
   const { products, deleteProduct, filterProducts } = useAppContext();

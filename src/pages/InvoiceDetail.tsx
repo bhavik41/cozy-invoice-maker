@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Edit2, Printer, Download, Share2, ArrowLeft, Trash2 } from 'lucide-react';
 import { formatCurrency, printInvoice } from '@/utils/helpers';
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
