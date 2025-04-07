@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { User, Store, Printer, Database, Building2 } from 'lucide-react';
+import { Customer } from '@/types';
 
 // Check if we're running in Electron
 const isElectron = window.api !== undefined;
@@ -43,8 +44,18 @@ const Settings = () => {
   const [branch, setBranch] = useState('');
 
   const handleSaveBusinessDetails = () => {
-    // Create a new seller if none exists, otherwise update the current one
-    const seller = currentSeller ? { ...currentSeller } : { id: `seller-${Date.now()}` };
+    // Create a new Customer object if none exists, otherwise update the current one
+    const seller: Customer = currentSeller ? { ...currentSeller } : {
+      id: `seller-${Date.now()}`,
+      name: '',
+      address: '',
+      gstin: '',
+      state: '',
+      stateCode: '',
+      contact: '',
+      email: '',
+      pan: ''
+    };
     
     // Update seller properties
     seller.name = businessName;
