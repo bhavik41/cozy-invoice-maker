@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -69,6 +70,7 @@ const InvoiceCreate = () => {
   const [cgstAmount, setCgstAmount] = useState(0);
   const [sgstAmount, setSgstAmount] = useState(0);
   const [igstAmount, setIgstAmount] = useState(0);
+  const [selectedBuyerId, setSelectedBuyerId] = useState<string>('');
 
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(InvoiceFormSchema),
@@ -92,6 +94,13 @@ const InvoiceCreate = () => {
     },
   });
 
+  // Handle buyer selection change
+  const handleBuyerChange = (buyerId: string) => {
+    form.setValue('buyerId', buyerId);
+    setSelectedBuyerId(buyerId);
+    recalculateTaxes(invoiceItems, buyerId);
+  };
+
   const addItem = () => {
     if (products.length === 0) {
       toast.error('No products available. Please add products first.');
@@ -109,11 +118,15 @@ const InvoiceCreate = () => {
       amount: 0
     };
 
-    setInvoiceItems([...invoiceItems, newItem]);
+    const updatedItems = [...invoiceItems, newItem];
+    setInvoiceItems(updatedItems);
+    recalculateTaxes(updatedItems, selectedBuyerId);
   };
 
   const removeItem = (id: string) => {
-    setInvoiceItems(invoiceItems.filter(item => item.id !== id));
+    const updatedItems = invoiceItems.filter(item => item.id !== id);
+    setInvoiceItems(updatedItems);
+    recalculateTaxes(updatedItems, selectedBuyerId);
   };
 
   const updateItem = (id: string, field: keyof InvoiceItem, value: any) => {
@@ -126,16 +139,16 @@ const InvoiceCreate = () => {
           const selectedProduct = getProduct(value);
           if (selectedProduct) {
             updatedItem.productName = selectedProduct.name;
-            updatedItem.hsnCode = selectedProduct.hsnCode;
-            updatedItem.gstRate = selectedProduct.gstRate;
-            updatedItem.price = selectedProduct.price;
-            updatedItem.amount = updatedItem.quantity * selectedProduct.price;
+            updatedItem.hsnCode = selectedProduct.hsnCode || '';
+            updatedItem.gstRate = selectedProduct.gstRate || 0;
+            updatedItem.price = selectedProduct.price || 0;
+            updatedItem.amount = updatedItem.quantity * (selectedProduct.price || 0);
           }
         }
         
         // If changing quantity or price, recalculate amount
         if (field === 'quantity' || field === 'price') {
-          updatedItem.amount = updatedItem.quantity * updatedItem.price;
+          updatedItem.amount = parseFloat((updatedItem.quantity * updatedItem.price).toFixed(2));
         }
         
         return updatedItem;
@@ -144,11 +157,12 @@ const InvoiceCreate = () => {
     });
     
     setInvoiceItems(updatedItems);
+    recalculateTaxes(updatedItems, selectedBuyerId);
   };
 
-  // Calculate totals whenever invoice items change
-  useEffect(() => {
-    const amount = invoiceItems.reduce((sum, item) => sum + item.amount, 0);
+  // Recalculate taxes and total based on items
+  const recalculateTaxes = (items: InvoiceItem[], buyerId: string) => {
+    const amount = parseFloat(items.reduce((sum, item) => sum + (item.amount || 0), 0).toFixed(2));
     setTotalAmount(amount);
     
     let totalTax = 0;
@@ -157,29 +171,27 @@ const InvoiceCreate = () => {
     let igst = 0;
     
     // Split tax calculations based on whether customer is in same state as seller
-    invoiceItems.forEach(item => {
-      const itemTaxAmount = item.amount * item.gstRate / 100;
+    items.forEach(item => {
+      const itemTaxAmount = parseFloat((item.amount * item.gstRate / 100).toFixed(2));
       totalTax += itemTaxAmount;
       
       // Determine if we need to apply IGST or CGST+SGST
-      // If buyer and seller are in same state, apply CGST + SGST
-      // Otherwise apply IGST
-      if (form.getValues().buyerId) {
-        const buyer = customers.find(c => c.id === form.getValues().buyerId);
-        if (buyer && currentSeller && buyer.stateCode === currentSeller.stateCode) {
-          cgst += itemTaxAmount / 2;
-          sgst += itemTaxAmount / 2;
+      if (buyerId && currentSeller) {
+        const buyer = customers.find(c => c.id === buyerId);
+        if (buyer && buyer.stateCode === currentSeller.stateCode) {
+          cgst += parseFloat((itemTaxAmount / 2).toFixed(2));
+          sgst += parseFloat((itemTaxAmount / 2).toFixed(2));
         } else {
           igst += itemTaxAmount;
         }
       }
     });
     
-    setTotalTaxAmount(totalTax);
-    setCgstAmount(cgst);
-    setSgstAmount(sgst);
-    setIgstAmount(igst);
-  }, [invoiceItems, form.getValues().buyerId, customers, currentSeller]);
+    setTotalTaxAmount(parseFloat(totalTax.toFixed(2)));
+    setCgstAmount(parseFloat(cgst.toFixed(2)));
+    setSgstAmount(parseFloat(sgst.toFixed(2)));
+    setIgstAmount(parseFloat(igst.toFixed(2)));
+  };
 
   const onSubmit = (values: InvoiceFormValues) => {
     if (!currentSeller) {
@@ -189,6 +201,13 @@ const InvoiceCreate = () => {
 
     if (invoiceItems.length === 0) {
       toast.error('Please add at least one item to the invoice.');
+      return;
+    }
+    
+    // Check if any item is missing product selection
+    const missingProductItem = invoiceItems.find(item => !item.productId);
+    if (missingProductItem) {
+      toast.error('Please select a product for all items.');
       return;
     }
 
@@ -206,8 +225,8 @@ const InvoiceCreate = () => {
     const igstRate = buyer.stateCode !== currentSeller.stateCode ? 
       Math.max(...invoiceItems.map(item => item.gstRate)) : 0;
 
-    // Convert total amounts to words (placeholder for actual implementation)
-    const totalAmountInWords = `${totalAmount} Rupees Only`;
+    // Convert total amounts to words - placeholder for now
+    const totalAmountInWords = `${totalAmount + totalTaxAmount} Rupees Only`;
     const totalTaxAmountInWords = `${totalTaxAmount} Rupees Only`;
 
     const newInvoice = {
@@ -236,23 +255,32 @@ const InvoiceCreate = () => {
       cgstRate,
       sgstRate,
       igstRate,
+      cgstAmount,
+      sgstAmount,
+      igstAmount,
       totalAmount,
       totalTaxAmount,
       totalAmountInWords,
       totalTaxAmountInWords,
+      grandTotal: totalAmount + totalTaxAmount,
       bankDetails: {
-        bankName: '',
-        accountNumber: '',
-        branch: '',
-        ifscCode: '',
+        bankName: currentSeller.bankDetails?.bankName || '',
+        accountNumber: currentSeller.bankDetails?.accountNumber || '',
+        branch: currentSeller.bankDetails?.branch || '',
+        ifscCode: currentSeller.bankDetails?.ifscCode || '',
       },
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
-    addInvoice(newInvoice);
-    toast.success('Invoice created successfully!');
-    navigate('/invoices');
+    try {
+      addInvoice(newInvoice);
+      toast.success('Invoice created successfully!');
+      navigate('/invoices');
+    } catch (error) {
+      console.error('Error creating invoice:', error);
+      toast.error('Failed to create invoice. Please try again.');
+    }
   };
 
   return (
@@ -337,7 +365,7 @@ const InvoiceCreate = () => {
                     <FormItem>
                       <FormLabel>Customer</FormLabel>
                       <Select
-                        onValueChange={field.onChange}
+                        onValueChange={(value) => handleBuyerChange(value)}
                         defaultValue={field.value}
                       >
                         <FormControl>
@@ -346,11 +374,17 @@ const InvoiceCreate = () => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {customers.map((customer) => (
-                            <SelectItem key={customer.id} value={customer.id}>
-                              {customer.name}
+                          {customers.length === 0 ? (
+                            <SelectItem value="no-customers" disabled>
+                              No customers available
                             </SelectItem>
-                          ))}
+                          ) : (
+                            customers.map((customer) => (
+                              <SelectItem key={customer.id} value={customer.id}>
+                                {customer.name}
+                              </SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -374,7 +408,7 @@ const InvoiceCreate = () => {
                 />
               </div>
               
-              {/* Additional Fields (Collapsible) */}
+              {/* Additional Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -474,18 +508,24 @@ const InvoiceCreate = () => {
                               <SelectValue placeholder="Select a product" />
                             </SelectTrigger>
                             <SelectContent>
-                              {products.map((product) => (
-                                <SelectItem key={product.id} value={product.id}>
-                                  {product.name}
+                              {products.length === 0 ? (
+                                <SelectItem value="no-products" disabled>
+                                  No products available
                                 </SelectItem>
-                              ))}
+                              ) : (
+                                products.map((product) => (
+                                  <SelectItem key={product.id} value={product.id}>
+                                    {product.name}
+                                  </SelectItem>
+                                ))
+                              )}
                             </SelectContent>
                           </Select>
                         </div>
                         
                         <div className="col-span-2">
                           <Input
-                            value={item.hsnCode}
+                            value={item.hsnCode || ''}
                             onChange={(e) => updateItem(item.id, 'hsnCode', e.target.value)}
                             disabled
                           />
@@ -493,7 +533,7 @@ const InvoiceCreate = () => {
                         
                         <div className="col-span-1">
                           <Input
-                            value={item.gstRate}
+                            value={item.gstRate || 0}
                             type="number"
                             onChange={(e) => updateItem(item.id, 'gstRate', parseFloat(e.target.value))}
                             disabled
@@ -502,7 +542,7 @@ const InvoiceCreate = () => {
                         
                         <div className="col-span-2">
                           <Input
-                            value={item.quantity}
+                            value={item.quantity || 0}
                             type="number"
                             min="0.001"
                             step="0.001"
@@ -512,7 +552,7 @@ const InvoiceCreate = () => {
                         
                         <div className="col-span-2">
                           <Input
-                            value={item.price}
+                            value={item.price || 0}
                             type="number"
                             min="0"
                             step="0.01"
@@ -522,7 +562,7 @@ const InvoiceCreate = () => {
                         
                         <div className="col-span-1">
                           <Input
-                            value={item.amount}
+                            value={item.amount || 0}
                             disabled
                           />
                         </div>
@@ -569,21 +609,21 @@ const InvoiceCreate = () => {
                   
                   {cgstAmount > 0 && (
                     <div className="flex justify-between">
-                      <span className="font-medium">CGST:</span>
+                      <span className="font-medium">CGST @ {cgstAmount > 0 ? (cgstAmount / totalAmount * 100).toFixed(1) : 0}%:</span>
                       <span>{formatCurrency(cgstAmount)}</span>
                     </div>
                   )}
                   
                   {sgstAmount > 0 && (
                     <div className="flex justify-between">
-                      <span className="font-medium">SGST:</span>
+                      <span className="font-medium">SGST @ {sgstAmount > 0 ? (sgstAmount / totalAmount * 100).toFixed(1) : 0}%:</span>
                       <span>{formatCurrency(sgstAmount)}</span>
                     </div>
                   )}
                   
                   {igstAmount > 0 && (
                     <div className="flex justify-between">
-                      <span className="font-medium">IGST:</span>
+                      <span className="font-medium">IGST @ {igstAmount > 0 ? (igstAmount / totalAmount * 100).toFixed(1) : 0}%:</span>
                       <span>{formatCurrency(igstAmount)}</span>
                     </div>
                   )}
