@@ -23,6 +23,7 @@ function createDatabase() {
     fs.mkdirSync(userDataPath, { recursive: true });
   }
 
+  console.log('Creating/opening database at:', dbPath);
   db = new Database(dbPath);
   
   // Create tables if they don't exist
@@ -55,8 +56,8 @@ function createWindow() {
     width: 1200,
     height: 800,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
+      nodeIntegration: false,
+      contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
     },
   });
@@ -86,62 +87,156 @@ app.whenReady().then(() => {
   // Database operations
   
   // Get all items
-  ipcMain.handle('getItems', (event, table) => {
-    const stmt = db.prepare(`SELECT * FROM ${table}`);
-    const rows = stmt.all();
-    return rows.map(row => ({ id: row.id, ...JSON.parse(row.data) }));
+  ipcMain.handle('getItems', async (event, table) => {
+    try {
+      console.log(`Getting all items from ${table}...`);
+      const stmt = db.prepare(`SELECT * FROM ${table}`);
+      const rows = stmt.all();
+      console.log(`Found ${rows.length} items in ${table}`);
+      
+      const items = rows.map(row => {
+        try {
+          const parsedData = JSON.parse(row.data);
+          return { id: row.id, ...parsedData };
+        } catch (error) {
+          console.error(`Error parsing data for item ${row.id}:`, error);
+          return { id: row.id, error: 'Invalid data format' };
+        }
+      });
+      
+      return items;
+    } catch (error) {
+      console.error(`Error getting items from ${table}:`, error);
+      throw error;
+    }
   });
   
   // Get single item
-  ipcMain.handle('getItem', (event, table, id) => {
-    const stmt = db.prepare(`SELECT * FROM ${table} WHERE id = ?`);
-    const row = stmt.get(id);
-    return row ? { id: row.id, ...JSON.parse(row.data) } : null;
+  ipcMain.handle('getItem', async (event, table, id) => {
+    try {
+      console.log(`Getting item ${id} from ${table}...`);
+      const stmt = db.prepare(`SELECT * FROM ${table} WHERE id = ?`);
+      const row = stmt.get(id);
+      
+      if (!row) {
+        console.log(`Item ${id} not found in ${table}`);
+        return null;
+      }
+      
+      try {
+        const parsedData = JSON.parse(row.data);
+        return { id: row.id, ...parsedData };
+      } catch (error) {
+        console.error(`Error parsing data for item ${id}:`, error);
+        throw new Error(`Invalid data format for item ${id}`);
+      }
+    } catch (error) {
+      console.error(`Error getting item ${id} from ${table}:`, error);
+      throw error;
+    }
   });
   
   // Add item
-  ipcMain.handle('addItem', (event, table, item) => {
-    const stmt = db.prepare(`INSERT INTO ${table} (id, data) VALUES (?, ?)`);
-    const { id, ...rest } = item;
-    stmt.run(id, JSON.stringify(rest));
-    return item;
+  ipcMain.handle('addItem', async (event, table, item) => {
+    try {
+      console.log(`Adding item to ${table}:`, item);
+      const stmt = db.prepare(`INSERT INTO ${table} (id, data) VALUES (?, ?)`);
+      const { id, ...rest } = item;
+      
+      if (!id) {
+        throw new Error('Item ID is required');
+      }
+      
+      stmt.run(id, JSON.stringify(rest));
+      console.log(`Item ${id} added to ${table}`);
+      return item;
+    } catch (error) {
+      console.error(`Error adding item to ${table}:`, error);
+      throw error;
+    }
   });
   
   // Update item
-  ipcMain.handle('updateItem', (event, table, item) => {
-    const stmt = db.prepare(`UPDATE ${table} SET data = ? WHERE id = ?`);
-    const { id, ...rest } = item;
-    stmt.run(JSON.stringify(rest), id);
-    return item;
+  ipcMain.handle('updateItem', async (event, table, item) => {
+    try {
+      console.log(`Updating item in ${table}:`, item);
+      const stmt = db.prepare(`UPDATE ${table} SET data = ? WHERE id = ?`);
+      const { id, ...rest } = item;
+      
+      if (!id) {
+        throw new Error('Item ID is required');
+      }
+      
+      const result = stmt.run(JSON.stringify(rest), id);
+      
+      if (result.changes === 0) {
+        console.warn(`No changes made to item ${id} in ${table}`);
+      } else {
+        console.log(`Item ${id} updated in ${table}`);
+      }
+      
+      return item;
+    } catch (error) {
+      console.error(`Error updating item in ${table}:`, error);
+      throw error;
+    }
   });
   
   // Delete item
-  ipcMain.handle('deleteItem', (event, table, id) => {
-    const stmt = db.prepare(`DELETE FROM ${table} WHERE id = ?`);
-    stmt.run(id);
-    return id;
+  ipcMain.handle('deleteItem', async (event, table, id) => {
+    try {
+      console.log(`Deleting item ${id} from ${table}...`);
+      const stmt = db.prepare(`DELETE FROM ${table} WHERE id = ?`);
+      const result = stmt.run(id);
+      
+      if (result.changes === 0) {
+        console.warn(`Item ${id} not found in ${table}, nothing deleted`);
+      } else {
+        console.log(`Item ${id} deleted from ${table}`);
+      }
+      
+      return id;
+    } catch (error) {
+      console.error(`Error deleting item ${id} from ${table}:`, error);
+      throw error;
+    }
   });
   
   // Export data
   ipcMain.handle('exportData', async () => {
-    const products = db.prepare('SELECT * FROM products').all();
-    const customers = db.prepare('SELECT * FROM customers').all();
-    const invoices = db.prepare('SELECT * FROM invoices').all();
-    const settings = db.prepare('SELECT * FROM settings').all();
-    
-    return {
-      products: products.map(row => ({ id: row.id, ...JSON.parse(row.data) })),
-      customers: customers.map(row => ({ id: row.id, ...JSON.parse(row.data) })),
-      invoices: invoices.map(row => ({ id: row.id, ...JSON.parse(row.data) })),
-      settings: settings.reduce((acc, row) => {
-        acc[row.key] = JSON.parse(row.value);
-        return acc;
-      }, {})
-    };
+    try {
+      console.log('Exporting all data...');
+      const products = db.prepare('SELECT * FROM products').all();
+      const customers = db.prepare('SELECT * FROM customers').all();
+      const invoices = db.prepare('SELECT * FROM invoices').all();
+      const settings = db.prepare('SELECT * FROM settings').all();
+      
+      const exportData = {
+        products: products.map(row => ({ id: row.id, ...JSON.parse(row.data) })),
+        customers: customers.map(row => ({ id: row.id, ...JSON.parse(row.data) })),
+        invoices: invoices.map(row => ({ id: row.id, ...JSON.parse(row.data) })),
+        settings: settings.reduce((acc, row) => {
+          try {
+            acc[row.key] = JSON.parse(row.value);
+          } catch (error) {
+            console.error(`Error parsing setting ${row.key}:`, error);
+            acc[row.key] = null;
+          }
+          return acc;
+        }, {})
+      };
+      
+      console.log('Data export complete');
+      return exportData;
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      throw error;
+    }
   });
   
   // Import data
   ipcMain.handle('importData', async (event, data) => {
+    console.log('Importing data...');
     db.exec('BEGIN TRANSACTION');
     
     try {
@@ -153,22 +248,28 @@ app.whenReady().then(() => {
       
       // Insert new data
       const insertProduct = db.prepare('INSERT INTO products (id, data) VALUES (?, ?)');
-      data.products.forEach(product => {
-        const { id, ...rest } = product;
-        insertProduct.run(id, JSON.stringify(rest));
-      });
+      if (data.products && Array.isArray(data.products)) {
+        data.products.forEach(product => {
+          const { id, ...rest } = product;
+          insertProduct.run(id, JSON.stringify(rest));
+        });
+      }
       
       const insertCustomer = db.prepare('INSERT INTO customers (id, data) VALUES (?, ?)');
-      data.customers.forEach(customer => {
-        const { id, ...rest } = customer;
-        insertCustomer.run(id, JSON.stringify(rest));
-      });
+      if (data.customers && Array.isArray(data.customers)) {
+        data.customers.forEach(customer => {
+          const { id, ...rest } = customer;
+          insertCustomer.run(id, JSON.stringify(rest));
+        });
+      }
       
       const insertInvoice = db.prepare('INSERT INTO invoices (id, data) VALUES (?, ?)');
-      data.invoices.forEach(invoice => {
-        const { id, ...rest } = invoice;
-        insertInvoice.run(id, JSON.stringify(rest));
-      });
+      if (data.invoices && Array.isArray(data.invoices)) {
+        data.invoices.forEach(invoice => {
+          const { id, ...rest } = invoice;
+          insertInvoice.run(id, JSON.stringify(rest));
+        });
+      }
       
       const insertSetting = db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)');
       if (data.currentSeller) {
@@ -176,25 +277,51 @@ app.whenReady().then(() => {
       }
       
       db.exec('COMMIT');
+      console.log('Data import complete');
       return { success: true };
     } catch (error) {
       db.exec('ROLLBACK');
+      console.error('Error importing data:', error);
       throw error;
     }
   });
   
   // Get setting
-  ipcMain.handle('getSetting', (event, key) => {
-    const stmt = db.prepare('SELECT value FROM settings WHERE key = ?');
-    const row = stmt.get(key);
-    return row ? JSON.parse(row.value) : null;
+  ipcMain.handle('getSetting', async (event, key) => {
+    try {
+      console.log(`Getting setting: ${key}`);
+      const stmt = db.prepare('SELECT value FROM settings WHERE key = ?');
+      const row = stmt.get(key);
+      
+      if (!row) {
+        console.log(`Setting ${key} not found`);
+        return null;
+      }
+      
+      try {
+        return JSON.parse(row.value);
+      } catch (error) {
+        console.error(`Error parsing setting ${key}:`, error);
+        return null;
+      }
+    } catch (error) {
+      console.error(`Error getting setting ${key}:`, error);
+      throw error;
+    }
   });
   
   // Set setting
-  ipcMain.handle('setSetting', (event, key, value) => {
-    const stmt = db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)');
-    stmt.run(key, JSON.stringify(value));
-    return value;
+  ipcMain.handle('setSetting', async (event, key, value) => {
+    try {
+      console.log(`Setting ${key}:`, value);
+      const stmt = db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)');
+      stmt.run(key, JSON.stringify(value));
+      console.log(`Setting ${key} saved`);
+      return value;
+    } catch (error) {
+      console.error(`Error setting ${key}:`, error);
+      throw error;
+    }
   });
 });
 
@@ -206,6 +333,7 @@ app.on('window-all-closed', function () {
 // Close database connection when app is about to quit
 app.on('will-quit', () => {
   if (db) {
+    console.log('Closing database connection');
     db.close();
   }
 });

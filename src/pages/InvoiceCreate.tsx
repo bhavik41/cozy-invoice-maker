@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -67,6 +66,9 @@ const InvoiceCreate = () => {
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
   const [totalAmount, setTotalAmount] = useState(0);
   const [totalTaxAmount, setTotalTaxAmount] = useState(0);
+  const [cgstAmount, setCgstAmount] = useState(0);
+  const [sgstAmount, setSgstAmount] = useState(0);
+  const [igstAmount, setIgstAmount] = useState(0);
 
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(InvoiceFormSchema),
@@ -149,11 +151,35 @@ const InvoiceCreate = () => {
     const amount = invoiceItems.reduce((sum, item) => sum + item.amount, 0);
     setTotalAmount(amount);
     
-    const taxAmount = invoiceItems.reduce((sum, item) => {
-      return sum + (item.amount * item.gstRate / 100);
-    }, 0);
-    setTotalTaxAmount(taxAmount);
-  }, [invoiceItems]);
+    let totalTax = 0;
+    let cgst = 0;
+    let sgst = 0;
+    let igst = 0;
+    
+    // Split tax calculations based on whether customer is in same state as seller
+    invoiceItems.forEach(item => {
+      const itemTaxAmount = item.amount * item.gstRate / 100;
+      totalTax += itemTaxAmount;
+      
+      // Determine if we need to apply IGST or CGST+SGST
+      // If buyer and seller are in same state, apply CGST + SGST
+      // Otherwise apply IGST
+      if (form.getValues().buyerId) {
+        const buyer = customers.find(c => c.id === form.getValues().buyerId);
+        if (buyer && currentSeller && buyer.stateCode === currentSeller.stateCode) {
+          cgst += itemTaxAmount / 2;
+          sgst += itemTaxAmount / 2;
+        } else {
+          igst += itemTaxAmount;
+        }
+      }
+    });
+    
+    setTotalTaxAmount(totalTax);
+    setCgstAmount(cgst);
+    setSgstAmount(sgst);
+    setIgstAmount(igst);
+  }, [invoiceItems, form.getValues().buyerId, customers, currentSeller]);
 
   const onSubmit = (values: InvoiceFormValues) => {
     if (!currentSeller) {
@@ -173,16 +199,22 @@ const InvoiceCreate = () => {
       return;
     }
 
+    // Calculate GST rates
+    const cgstRate = buyer.stateCode === currentSeller.stateCode ? 
+      Math.max(...invoiceItems.map(item => item.gstRate / 2)) : 0;
+    const sgstRate = cgstRate;
+    const igstRate = buyer.stateCode !== currentSeller.stateCode ? 
+      Math.max(...invoiceItems.map(item => item.gstRate)) : 0;
+
     // Convert total amounts to words (placeholder for actual implementation)
     const totalAmountInWords = `${totalAmount} Rupees Only`;
     const totalTaxAmountInWords = `${totalTaxAmount} Rupees Only`;
 
     const newInvoice = {
       id: uuidv4(),
-      // Make sure to explicitly include all required Invoice properties from values
       invoiceNumber: values.invoiceNumber,
-      date: values.date,
       eWayBillNumber: values.eWayBillNumber || '',
+      date: values.date,
       deliveryNote: values.deliveryNote || '',
       modeOfPayment: values.modeOfPayment || '',
       reference: values.reference || '',
@@ -201,9 +233,9 @@ const InvoiceCreate = () => {
       seller: currentSeller,
       buyer,
       buyerId: buyer.id,
-      cgstRate: 0, // These would be calculated based on item GST rates
-      sgstRate: 0,
-      igstRate: 0,
+      cgstRate,
+      sgstRate,
+      igstRate,
       totalAmount,
       totalTaxAmount,
       totalAmountInWords,
@@ -472,8 +504,9 @@ const InvoiceCreate = () => {
                           <Input
                             value={item.quantity}
                             type="number"
-                            min="1"
-                            onChange={(e) => updateItem(item.id, 'quantity', parseInt(e.target.value, 10))}
+                            min="0.001"
+                            step="0.001"
+                            onChange={(e) => updateItem(item.id, 'quantity', parseFloat(e.target.value))}
                           />
                         </div>
                         
@@ -533,10 +566,28 @@ const InvoiceCreate = () => {
                     <span className="font-medium">Subtotal:</span>
                     <span>{formatCurrency(totalAmount)}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="font-medium">GST:</span>
-                    <span>{formatCurrency(totalTaxAmount)}</span>
-                  </div>
+                  
+                  {cgstAmount > 0 && (
+                    <div className="flex justify-between">
+                      <span className="font-medium">CGST:</span>
+                      <span>{formatCurrency(cgstAmount)}</span>
+                    </div>
+                  )}
+                  
+                  {sgstAmount > 0 && (
+                    <div className="flex justify-between">
+                      <span className="font-medium">SGST:</span>
+                      <span>{formatCurrency(sgstAmount)}</span>
+                    </div>
+                  )}
+                  
+                  {igstAmount > 0 && (
+                    <div className="flex justify-between">
+                      <span className="font-medium">IGST:</span>
+                      <span>{formatCurrency(igstAmount)}</span>
+                    </div>
+                  )}
+                  
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total:</span>
                     <span>{formatCurrency(totalAmount + totalTaxAmount)}</span>

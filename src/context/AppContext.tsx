@@ -1,6 +1,7 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Product, Customer, Invoice, InvoiceFilter, ProductFilter, CustomerFilter } from '@/types';
+import { toast } from 'sonner';
 
 // Define the window.api type
 declare global {
@@ -55,56 +56,88 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [currentSeller, setCurrentSeller] = useState<Customer | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Load data on mount
   useEffect(() => {
     const loadData = async () => {
-      if (isElectron) {
-        // Load from SQLite via Electron IPC
-        try {
-          const loadedProducts = await window.api!.getItems('products');
-          if (loadedProducts && loadedProducts.length > 0) {
-            setProducts(loadedProducts);
+      setIsLoading(true);
+      
+      try {
+        if (isElectron) {
+          // Load from SQLite via Electron IPC
+          console.log('Loading data from Electron...');
+          
+          try {
+            const loadedProducts = await window.api!.getItems('products');
+            console.log('Loaded products:', loadedProducts);
+            if (loadedProducts && Array.isArray(loadedProducts)) {
+              setProducts(loadedProducts);
+            }
+
+            const loadedCustomers = await window.api!.getItems('customers');
+            console.log('Loaded customers:', loadedCustomers);
+            if (loadedCustomers && Array.isArray(loadedCustomers)) {
+              setCustomers(loadedCustomers);
+            }
+
+            const loadedInvoices = await window.api!.getItems('invoices');
+            console.log('Loaded invoices:', loadedInvoices);
+            if (loadedInvoices && Array.isArray(loadedInvoices)) {
+              setInvoices(loadedInvoices);
+            }
+
+            const loadedSeller = await window.api!.getSetting('currentSeller');
+            console.log('Loaded seller:', loadedSeller);
+            if (loadedSeller) {
+              setCurrentSeller(loadedSeller);
+            }
+          } catch (error) {
+            console.error('Error loading data:', error);
+            toast.error('Failed to load data from database.');
+          }
+        } else {
+          // Fallback to localStorage for web browser development
+          console.log('Loading data from localStorage...');
+          
+          const loadedProducts = localStorage.getItem('products');
+          if (loadedProducts) {
+            try {
+              setProducts(JSON.parse(loadedProducts));
+            } catch (error) {
+              console.error('Error parsing products:', error);
+            }
           }
 
-          const loadedCustomers = await window.api!.getItems('customers');
-          if (loadedCustomers && loadedCustomers.length > 0) {
-            setCustomers(loadedCustomers);
+          const loadedCustomers = localStorage.getItem('customers');
+          if (loadedCustomers) {
+            try {
+              setCustomers(JSON.parse(loadedCustomers));
+            } catch (error) {
+              console.error('Error parsing customers:', error);
+            }
           }
 
-          const loadedInvoices = await window.api!.getItems('invoices');
-          if (loadedInvoices && loadedInvoices.length > 0) {
-            setInvoices(loadedInvoices);
+          const loadedInvoices = localStorage.getItem('invoices');
+          if (loadedInvoices) {
+            try {
+              setInvoices(JSON.parse(loadedInvoices));
+            } catch (error) {
+              console.error('Error parsing invoices:', error);
+            }
           }
 
-          const loadedSeller = await window.api!.getSetting('currentSeller');
+          const loadedSeller = localStorage.getItem('currentSeller');
           if (loadedSeller) {
-            setCurrentSeller(loadedSeller);
+            try {
+              setCurrentSeller(JSON.parse(loadedSeller));
+            } catch (error) {
+              console.error('Error parsing currentSeller:', error);
+            }
           }
-        } catch (error) {
-          console.error('Error loading data:', error);
         }
-      } else {
-        // Fallback to localStorage for web browser development
-        const loadedProducts = localStorage.getItem('products');
-        if (loadedProducts) {
-          setProducts(JSON.parse(loadedProducts));
-        }
-
-        const loadedCustomers = localStorage.getItem('customers');
-        if (loadedCustomers) {
-          setCustomers(JSON.parse(loadedCustomers));
-        }
-
-        const loadedInvoices = localStorage.getItem('invoices');
-        if (loadedInvoices) {
-          setInvoices(JSON.parse(loadedInvoices));
-        }
-
-        const loadedSeller = localStorage.getItem('currentSeller');
-        if (loadedSeller) {
-          setCurrentSeller(JSON.parse(loadedSeller));
-        }
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -137,7 +170,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     if (currentSeller) {
       if (isElectron) {
-        window.api!.setSetting('currentSeller', currentSeller).catch(console.error);
+        window.api!.setSetting('currentSeller', currentSeller).catch(error => {
+          console.error('Error saving currentSeller:', error);
+        });
       } else {
         localStorage.setItem('currentSeller', JSON.stringify(currentSeller));
       }
@@ -148,13 +183,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addProduct = async (product: Product) => {
     if (isElectron) {
       try {
+        console.log('Adding product:', product);
         await window.api!.addItem('products', product);
-        setProducts([...products, product]);
+        setProducts(prevProducts => [...prevProducts, product]);
+        toast.success('Product added successfully');
       } catch (error) {
         console.error('Error adding product:', error);
+        toast.error('Failed to add product');
       }
     } else {
-      setProducts([...products, product]);
+      setProducts(prevProducts => [...prevProducts, product]);
+      toast.success('Product added successfully');
     }
   };
 
@@ -163,11 +202,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         await window.api!.updateItem('products', product);
         setProducts(products.map(p => p.id === product.id ? product : p));
+        toast.success('Product updated successfully');
       } catch (error) {
         console.error('Error updating product:', error);
+        toast.error('Failed to update product');
       }
     } else {
       setProducts(products.map(p => p.id === product.id ? product : p));
+      toast.success('Product updated successfully');
     }
   };
 
@@ -176,11 +218,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         await window.api!.deleteItem('products', id);
         setProducts(products.filter(p => p.id !== id));
+        toast.success('Product deleted successfully');
       } catch (error) {
         console.error('Error deleting product:', error);
+        toast.error('Failed to delete product');
       }
     } else {
       setProducts(products.filter(p => p.id !== id));
+      toast.success('Product deleted successfully');
     }
   };
 
@@ -188,13 +233,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addCustomer = async (customer: Customer) => {
     if (isElectron) {
       try {
+        console.log('Adding customer:', customer);
         await window.api!.addItem('customers', customer);
-        setCustomers([...customers, customer]);
+        setCustomers(prevCustomers => [...prevCustomers, customer]);
+        toast.success('Customer added successfully');
       } catch (error) {
         console.error('Error adding customer:', error);
+        toast.error('Failed to add customer');
       }
     } else {
-      setCustomers([...customers, customer]);
+      setCustomers(prevCustomers => [...prevCustomers, customer]);
+      toast.success('Customer added successfully');
     }
   };
 
@@ -203,11 +252,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         await window.api!.updateItem('customers', customer);
         setCustomers(customers.map(c => c.id === customer.id ? customer : c));
+        toast.success('Customer updated successfully');
       } catch (error) {
         console.error('Error updating customer:', error);
+        toast.error('Failed to update customer');
       }
     } else {
       setCustomers(customers.map(c => c.id === customer.id ? customer : c));
+      toast.success('Customer updated successfully');
     }
   };
 
@@ -216,11 +268,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         await window.api!.deleteItem('customers', id);
         setCustomers(customers.filter(c => c.id !== id));
+        toast.success('Customer deleted successfully');
       } catch (error) {
         console.error('Error deleting customer:', error);
+        toast.error('Failed to delete customer');
       }
     } else {
       setCustomers(customers.filter(c => c.id !== id));
+      toast.success('Customer deleted successfully');
     }
   };
 
@@ -228,13 +283,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addInvoice = async (invoice: Invoice) => {
     if (isElectron) {
       try {
+        console.log('Adding invoice:', invoice);
         await window.api!.addItem('invoices', invoice);
-        setInvoices([...invoices, invoice]);
+        setInvoices(prevInvoices => [...prevInvoices, invoice]);
+        toast.success('Invoice created successfully');
       } catch (error) {
         console.error('Error adding invoice:', error);
+        toast.error('Failed to create invoice');
       }
     } else {
-      setInvoices([...invoices, invoice]);
+      setInvoices(prevInvoices => [...prevInvoices, invoice]);
+      toast.success('Invoice created successfully');
     }
   };
 
@@ -243,11 +302,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         await window.api!.updateItem('invoices', invoice);
         setInvoices(invoices.map(i => i.id === invoice.id ? invoice : i));
+        toast.success('Invoice updated successfully');
       } catch (error) {
         console.error('Error updating invoice:', error);
+        toast.error('Failed to update invoice');
       }
     } else {
       setInvoices(invoices.map(i => i.id === invoice.id ? invoice : i));
+      toast.success('Invoice updated successfully');
     }
   };
 
@@ -256,11 +318,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         await window.api!.deleteItem('invoices', id);
         setInvoices(invoices.filter(i => i.id !== id));
+        toast.success('Invoice deleted successfully');
       } catch (error) {
         console.error('Error deleting invoice:', error);
+        toast.error('Failed to delete invoice');
       }
     } else {
       setInvoices(invoices.filter(i => i.id !== id));
+      toast.success('Invoice deleted successfully');
     }
   };
 
@@ -379,8 +444,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         linkElement.setAttribute('href', dataUri);
         linkElement.setAttribute('download', exportFileDefaultName);
         linkElement.click();
+        
+        toast.success('Data exported successfully');
       } catch (error) {
         console.error('Error exporting data:', error);
+        toast.error('Failed to export data');
       }
     } else {
       // Web browser fallback
@@ -400,6 +468,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       linkElement.setAttribute('href', dataUri);
       linkElement.setAttribute('download', exportFileDefaultName);
       linkElement.click();
+      
+      toast.success('Data exported successfully');
     }
   };
 
@@ -420,8 +490,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         
         const loadedSeller = await window.api!.getSetting('currentSeller');
         if (loadedSeller) setCurrentSeller(loadedSeller);
+        
+        toast.success('Data imported successfully');
       } catch (error) {
         console.error('Error importing data:', error);
+        toast.error('Failed to import data');
       }
     } else {
       // Web browser fallback
@@ -429,8 +502,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (data.customers) setCustomers(data.customers);
       if (data.invoices) setInvoices(data.invoices);
       if (data.currentSeller) setCurrentSeller(data.currentSeller);
+      
+      toast.success('Data imported successfully');
     }
   };
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading data...</div>;
+  }
 
   return (
     <AppContext.Provider value={{

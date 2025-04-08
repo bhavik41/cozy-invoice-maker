@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
@@ -73,6 +73,9 @@ const InvoiceDetail = () => {
       </div>
     );
   }
+  
+  // Check if we're using IGST or CGST+SGST based on the rates
+  const useIGST = invoice.igstRate > 0;
   
   return (
     <div className="max-w-5xl mx-auto">
@@ -201,8 +204,8 @@ const InvoiceDetail = () => {
                 <th className="border p-2 text-left">Description of Goods</th>
                 <th className="border p-2 text-center">HSN/SAC</th>
                 <th className="border p-2 text-center">GST Rate</th>
-                <th className="border p-2 text-center">Quantity M.T</th>
-                <th className="border p-2 text-center">Rate per M.T</th>
+                <th className="border p-2 text-center">Quantity</th>
+                <th className="border p-2 text-center">Rate per Unit</th>
                 <th className="border p-2 text-right">Amount</th>
               </tr>
             </thead>
@@ -213,7 +216,7 @@ const InvoiceDetail = () => {
                   <td className="border p-2">{item.productName}</td>
                   <td className="border p-2 text-center">{item.hsnCode}</td>
                   <td className="border p-2 text-center">{item.gstRate}%</td>
-                  <td className="border p-2 text-center">{item.quantity}</td>
+                  <td className="border p-2 text-center">{Number(item.quantity).toFixed(3)}</td>
                   <td className="border p-2 text-right">{item.price}</td>
                   <td className="border p-2 text-right">{formatCurrency(item.amount).replace('₹', '')}</td>
                 </tr>
@@ -225,29 +228,51 @@ const InvoiceDetail = () => {
               </tr>
               
               {/* Tax calculations */}
-              <tr>
-                <td colSpan={3} rowSpan={3} className="border p-2 align-top">
-                  <div className="text-center">
-                    <p>CGST @ {invoice.cgstRate}%</p>
-                    <p>SGST @ {invoice.sgstRate}%</p>
-                    <p>Round Off</p>
-                  </div>
-                </td>
-                <td colSpan={3} rowSpan={3} className="border p-2 align-top text-right">
-                  <div className="text-right">
-                    <p>CGST @ {invoice.cgstRate}%</p>
-                    <p>SGST @ {invoice.sgstRate}%</p>
-                    <p>Round Off</p>
-                  </div>
-                </td>
-                <td className="border p-2 text-right">{formatCurrency(invoice.totalTaxAmount / 2).replace('₹', '')}</td>
-              </tr>
-              <tr>
-                <td className="border p-2 text-right">{formatCurrency(invoice.totalTaxAmount / 2).replace('₹', '')}</td>
-              </tr>
-              <tr>
-                <td className="border p-2 text-right">0.00</td>
-              </tr>
+              {useIGST ? (
+                <tr>
+                  <td colSpan={3} className="border p-2 align-top">
+                    <div className="text-center">
+                      <p>IGST @ {invoice.igstRate}%</p>
+                      <p>Round Off</p>
+                    </div>
+                  </td>
+                  <td colSpan={3} className="border p-2 align-top text-right">
+                    <div className="text-right">
+                      <p>IGST @ {invoice.igstRate}%</p>
+                      <p>Round Off</p>
+                    </div>
+                  </td>
+                  <td className="border p-2 text-right">{formatCurrency(invoice.totalTaxAmount).replace('₹', '')}</td>
+                </tr>
+              ) : (
+                <>
+                  <tr>
+                    <td colSpan={3} rowSpan={3} className="border p-2 align-top">
+                      <div className="text-center">
+                        <p>CGST @ {invoice.cgstRate}%</p>
+                        <p>SGST @ {invoice.sgstRate}%</p>
+                        <p>Round Off</p>
+                      </div>
+                    </td>
+                    <td colSpan={3} className="border p-2 align-top text-right">
+                      <p>CGST @ {invoice.cgstRate}%</p>
+                    </td>
+                    <td className="border p-2 text-right">{formatCurrency(invoice.totalTaxAmount / 2).replace('₹', '')}</td>
+                  </tr>
+                  <tr>
+                    <td colSpan={3} className="border p-2 text-right">
+                      <p>SGST @ {invoice.sgstRate}%</p>
+                    </td>
+                    <td className="border p-2 text-right">{formatCurrency(invoice.totalTaxAmount / 2).replace('₹', '')}</td>
+                  </tr>
+                  <tr>
+                    <td colSpan={3} className="border p-2 text-right">
+                      <p>Round Off</p>
+                    </td>
+                    <td className="border p-2 text-right">0.00</td>
+                  </tr>
+                </>
+              )}
             </tbody>
             <tfoot>
               <tr>
@@ -269,41 +294,82 @@ const InvoiceDetail = () => {
               <tr className="bg-gray-50">
                 <th rowSpan={2} className="border p-2">HSN/SAC</th>
                 <th rowSpan={2} className="border p-2">Taxable Value</th>
-                <th colSpan={2} className="border p-2">Central Tax</th>
-                <th colSpan={2} className="border p-2">State Tax</th>
+                {useIGST ? (
+                  <th colSpan={2} className="border p-2">Integrated Tax</th>
+                ) : (
+                  <>
+                    <th colSpan={2} className="border p-2">Central Tax</th>
+                    <th colSpan={2} className="border p-2">State Tax</th>
+                  </>
+                )}
                 <th rowSpan={2} className="border p-2">Total Tax Amount</th>
               </tr>
               <tr className="bg-gray-50">
-                <th className="border p-2">Rate</th>
-                <th className="border p-2">Amount</th>
-                <th className="border p-2">Rate</th>
-                <th className="border p-2">Amount</th>
+                {useIGST ? (
+                  <>
+                    <th className="border p-2">Rate</th>
+                    <th className="border p-2">Amount</th>
+                  </>
+                ) : (
+                  <>
+                    <th className="border p-2">Rate</th>
+                    <th className="border p-2">Amount</th>
+                    <th className="border p-2">Rate</th>
+                    <th className="border p-2">Amount</th>
+                  </>
+                )}
               </tr>
             </thead>
             <tbody>
               {invoice.items.map((item) => {
                 const taxableValue = item.amount / (1 + item.gstRate / 100);
-                const centralTaxAmount = taxableValue * (item.gstRate / 2) / 100;
-                const stateTaxAmount = centralTaxAmount;
+                const totalTax = taxableValue * (item.gstRate / 100);
+                const centralTaxAmount = useIGST ? 0 : totalTax / 2;
+                const stateTaxAmount = useIGST ? 0 : totalTax / 2;
+                const igstAmount = useIGST ? totalTax : 0;
+                
                 return (
                   <tr key={`tax-${item.id}`}>
                     <td className="border p-2 text-center">{item.hsnCode}</td>
                     <td className="border p-2 text-right">{formatCurrency(taxableValue).replace('₹', '')}</td>
-                    <td className="border p-2 text-center">{item.gstRate / 2}%</td>
-                    <td className="border p-2 text-right">{formatCurrency(centralTaxAmount).replace('₹', '')}</td>
-                    <td className="border p-2 text-center">{item.gstRate / 2}%</td>
-                    <td className="border p-2 text-right">{formatCurrency(stateTaxAmount).replace('₹', '')}</td>
-                    <td className="border p-2 text-right">{formatCurrency(centralTaxAmount + stateTaxAmount).replace('₹', '')}</td>
+                    
+                    {useIGST ? (
+                      <>
+                        <td className="border p-2 text-center">{item.gstRate}%</td>
+                        <td className="border p-2 text-right">{formatCurrency(igstAmount).replace('₹', '')}</td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="border p-2 text-center">{item.gstRate / 2}%</td>
+                        <td className="border p-2 text-right">{formatCurrency(centralTaxAmount).replace('₹', '')}</td>
+                        <td className="border p-2 text-center">{item.gstRate / 2}%</td>
+                        <td className="border p-2 text-right">{formatCurrency(stateTaxAmount).replace('₹', '')}</td>
+                      </>
+                    )}
+                    
+                    <td className="border p-2 text-right">{formatCurrency(totalTax).replace('₹', '')}</td>
                   </tr>
                 );
               })}
+              
               <tr>
                 <td className="border p-2 text-right font-bold">Total</td>
                 <td className="border p-2 text-right font-bold">{formatCurrency(invoice.totalAmount - invoice.totalTaxAmount).replace('₹', '')}</td>
-                <td className="border p-2"></td>
-                <td className="border p-2 text-right font-bold">{formatCurrency(invoice.totalTaxAmount / 2).replace('₹', '')}</td>
-                <td className="border p-2"></td>
-                <td className="border p-2 text-right font-bold">{formatCurrency(invoice.totalTaxAmount / 2).replace('₹', '')}</td>
+                
+                {useIGST ? (
+                  <>
+                    <td className="border p-2"></td>
+                    <td className="border p-2 text-right font-bold">{formatCurrency(invoice.totalTaxAmount).replace('₹', '')}</td>
+                  </>
+                ) : (
+                  <>
+                    <td className="border p-2"></td>
+                    <td className="border p-2 text-right font-bold">{formatCurrency(invoice.totalTaxAmount / 2).replace('₹', '')}</td>
+                    <td className="border p-2"></td>
+                    <td className="border p-2 text-right font-bold">{formatCurrency(invoice.totalTaxAmount / 2).replace('₹', '')}</td>
+                  </>
+                )}
+                
                 <td className="border p-2 text-right font-bold">{formatCurrency(invoice.totalTaxAmount).replace('₹', '')}</td>
               </tr>
             </tbody>
