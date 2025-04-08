@@ -1,11 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Edit2, Printer, Download, Share2, ArrowLeft, Trash2 } from 'lucide-react';
-import { formatCurrency, printInvoice } from '@/utils/helpers';
+import { Edit2, Printer, Download, Share2, ArrowLeft, Trash2, FileDown } from 'lucide-react';
+import { formatCurrency, printInvoice, exportInvoiceToJson, exportInvoiceToPdf } from '@/utils/helpers';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -15,6 +15,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // CSS for the invoice print
 const printStyles = `
@@ -41,6 +47,7 @@ const InvoiceDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getInvoice, deleteInvoice } = useAppContext();
+  const invoiceRef = useRef<HTMLDivElement>(null);
   
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const invoice = id ? getInvoice(id) : null;
@@ -55,6 +62,23 @@ const InvoiceDetail = () => {
   
   const handlePrint = () => {
     printInvoice();
+  };
+  
+  const handleExportJson = () => {
+    if (invoice) {
+      exportInvoiceToJson(invoice);
+      toast.success('Invoice exported as JSON');
+    }
+  };
+  
+  const handleExportPdf = () => {
+    if (invoice && invoiceRef.current) {
+      exportInvoiceToPdf(
+        'invoice-to-print', 
+        `invoice-${invoice.invoiceNumber}-${new Date().toISOString().slice(0, 10)}.pdf`
+      );
+      toast.success('Invoice exported as PDF');
+    }
   };
   
   if (!invoice) {
@@ -98,6 +122,22 @@ const InvoiceDetail = () => {
             <Printer className="h-4 w-4 mr-2" />
             Print
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <FileDown className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={handleExportJson}>
+                Export as JSON
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportPdf}>
+                Export as PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button variant="destructive" onClick={() => setDeleteDialogOpen(true)}>
             <Trash2 className="h-4 w-4 mr-2" />
             Delete
@@ -105,7 +145,7 @@ const InvoiceDetail = () => {
         </div>
       </div>
       
-      <Card className="p-6 mb-6" id="invoice-to-print">
+      <Card className="p-6 mb-6" id="invoice-to-print" ref={invoiceRef}>
         <div className="text-center border-b pb-4 mb-4">
           <h1 className="text-2xl font-bold">Tax Invoice</h1>
         </div>

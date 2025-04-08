@@ -37,6 +37,21 @@ export const calculateTaxAmount = (invoice: Invoice): number => {
   return taxAmount;
 };
 
+export const calculateCgstSgstAmount = (invoice: Invoice): { cgst: number, sgst: number } => {
+  let totalTax = 0;
+  
+  invoice.items.forEach(item => {
+    const itemTax = (item.amount * item.gstRate) / 100;
+    totalTax += itemTax;
+  });
+  
+  // Split the tax equally between CGST and SGST
+  return {
+    cgst: totalTax / 2,
+    sgst: totalTax / 2
+  };
+};
+
 export const numberToWords = (num: number): string => {
   const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
   const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
@@ -123,7 +138,22 @@ export const handleFileUpload = (callback: (data: any) => void) => {
 };
 
 export const printInvoice = () => {
-  window.print();
+  // Add a small delay to ensure styles are applied
+  setTimeout(() => {
+    window.print();
+  }, 100);
+};
+
+export const exportInvoiceToJson = (invoice: Invoice) => {
+  const dataStr = JSON.stringify(invoice, null, 2);
+  const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+  
+  const exportFileDefaultName = `invoice-${invoice.invoiceNumber}-${new Date().toISOString().slice(0, 10)}.json`;
+  
+  const linkElement = document.createElement('a');
+  linkElement.setAttribute('href', dataUri);
+  linkElement.setAttribute('download', exportFileDefaultName);
+  linkElement.click();
 };
 
 export const exportToCsv = (filename: string, rows: Array<Object>) => {
@@ -158,4 +188,15 @@ export const exportToCsv = (filename: string, rows: Array<Object>) => {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+};
+
+export const exportInvoiceToPdf = async (elementId: string, filename: string) => {
+  try {
+    // This is a placeholder - in a real app, you might use a library like jsPDF or html2pdf
+    // For now, we'll use the print functionality which allows saving as PDF
+    printInvoice();
+  } catch (error) {
+    console.error('Failed to export PDF:', error);
+    alert('PDF export failed. Try using Print to PDF option instead.');
+  }
 };
