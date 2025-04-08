@@ -1,9 +1,14 @@
 
-const { app, BrowserWindow, ipcMain } = require('electron');
-const path = require('path');
-const isDev = require('electron-is-dev');
-const Database = require('better-sqlite3');
-const fs = require('fs');
+import { app, BrowserWindow, ipcMain } from 'electron';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import isDev from 'electron-is-dev';
+import Database from 'better-sqlite3';
+import fs from 'fs';
+
+// Get __dirname equivalent in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Ensure user data directory exists
 const userDataPath = app.getPath('userData');
