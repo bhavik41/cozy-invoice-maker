@@ -78,9 +78,20 @@ const CustomerDetail = () => {
       </div>
       
       <Card className="p-6">
-        <h2 className="text-2xl font-semibold mb-4">{customer.name}</h2>
+        <div className="flex items-start gap-4">
+          {customer.logo && (
+            <img 
+              src={customer.logo} 
+              alt={`${customer.name} Logo`} 
+              className="h-24 w-auto object-contain border rounded p-2"
+            />
+          )}
+          <div className="flex-1">
+            <h2 className="text-2xl font-semibold mb-4">{customer.name}</h2>
+          </div>
+        </div>
         
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-2 gap-4 mb-6 mt-4">
           <div>
             <p className="text-sm text-gray-500">Contact Details</p>
             <p className="font-medium">Email: {customer.email || 'N/A'}</p>
@@ -99,6 +110,16 @@ const CustomerDetail = () => {
           <p className="whitespace-pre-line">{customer.address}</p>
           <p>{customer.state} - {customer.stateCode}</p>
         </div>
+
+        {customer.bankDetails && (
+          <div className="mb-6">
+            <p className="text-sm text-gray-500">Bank Details</p>
+            <p><strong>Bank Name:</strong> {customer.bankDetails.bankName || 'N/A'}</p>
+            <p><strong>Account Number:</strong> {customer.bankDetails.accountNumber || 'N/A'}</p>
+            <p><strong>Branch:</strong> {customer.bankDetails.branch || 'N/A'}</p>
+            <p><strong>IFSC Code:</strong> {customer.bankDetails.ifscCode || 'N/A'}</p>
+          </div>
+        )}
         
         <div className="border-t pt-4">
           <p className="text-sm text-gray-500">Additional Information</p>

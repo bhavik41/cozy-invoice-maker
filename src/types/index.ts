@@ -22,6 +22,7 @@ export interface Customer {
   email: string;
   pan: string;
   notes?: string;
+  logo?: string; // Added logo field for seller
   bankDetails?: {
     bankName: string;
     accountNumber: string;

@@ -137,10 +137,61 @@ export const handleFileUpload = (callback: (data: any) => void) => {
   input.click();
 };
 
+// Enhanced print function with additional styling
 export const printInvoice = () => {
+  // Add CSS specific for printing
+  const style = document.createElement('style');
+  style.id = 'print-styles';
+  style.innerHTML = `
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #invoice-to-print, #invoice-to-print * {
+        visibility: visible;
+      }
+      #invoice-to-print {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 0;
+        margin: 0;
+      }
+      #invoice-to-print .no-print {
+        display: none;
+      }
+      @page {
+        size: A4;
+        margin: 0.5cm;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th, td {
+        border: 1px solid black;
+        padding: 4px;
+        font-size: 9pt;
+      }
+      th {
+        font-weight: bold;
+        background-color: #f8f8f8;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+
   // Add a small delay to ensure styles are applied
   setTimeout(() => {
     window.print();
+    // Clean up the style element after printing
+    setTimeout(() => {
+      const styleElement = document.getElementById('print-styles');
+      if (styleElement) {
+        styleElement.remove();
+      }
+    }, 1000);
   }, 100);
 };
 
@@ -192,11 +243,69 @@ export const exportToCsv = (filename: string, rows: Array<Object>) => {
 
 export const exportInvoiceToPdf = async (elementId: string, filename: string) => {
   try {
-    // This is a placeholder - in a real app, you might use a library like jsPDF or html2pdf
-    // For now, we'll use the print functionality which allows saving as PDF
-    printInvoice();
+    // In a real application, you would use a PDF generation library
+    // For now, we'll use browser's print functionality which allows saving as PDF
+    const style = document.createElement('style');
+    style.id = 'pdf-export-styles';
+    style.innerHTML = `
+      @media print {
+        body * {
+          visibility: hidden;
+        }
+        #${elementId}, #${elementId} * {
+          visibility: visible;
+        }
+        #${elementId} {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          padding: 0;
+          margin: 0;
+        }
+        #${elementId} .no-print {
+          display: none;
+        }
+        @page {
+          size: A4;
+          margin: 0.5cm;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        th, td {
+          border: 1px solid black;
+          padding: 4px;
+          font-size: 9pt;
+        }
+        th {
+          font-weight: bold;
+          background-color: #f8f8f8;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Show a message to the user
+    toast('Please use the "Save as PDF" option in the print dialog', {
+      description: "When the print dialog opens, select 'Save as PDF' as the destination.",
+      duration: 5000,
+    });
+
+    // Give the toast time to display
+    setTimeout(() => {
+      window.print();
+      // Clean up the style element after printing
+      setTimeout(() => {
+        const styleElement = document.getElementById('pdf-export-styles');
+        if (styleElement) {
+          styleElement.remove();
+        }
+      }, 1000);
+    }, 1000);
   } catch (error) {
     console.error('Failed to export PDF:', error);
-    alert('PDF export failed. Try using Print to PDF option instead.');
+    toast.error('PDF export failed. Try using Print to PDF option instead.');
   }
 };

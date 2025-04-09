@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { User, Store, Printer, Database, Building2 } from 'lucide-react';
+import { User, Store, Printer, Database, Building2, Image, X } from 'lucide-react';
 import { Customer } from '@/types';
 
 // Check if we're running in Electron
@@ -25,6 +25,7 @@ const Settings = () => {
   const [contact, setContact] = useState(currentSeller?.contact || '');
   const [email, setEmail] = useState(currentSeller?.email || '');
   const [pan, setPan] = useState(currentSeller?.pan || '');
+  const [logo, setLogo] = useState(currentSeller?.logo || '');
   
   // Print settings (these would be saved to settings in a full implementation)
   const [enableHeaderLogo, setEnableHeaderLogo] = useState(true);
@@ -38,10 +39,25 @@ const Settings = () => {
   const [compactViewEnabled, setCompactViewEnabled] = useState(false);
   
   // Bank details
-  const [bankName, setBankName] = useState('');
-  const [accountNumber, setAccountNumber] = useState('');
-  const [ifscCode, setIfscCode] = useState('');
-  const [branch, setBranch] = useState('');
+  const [bankName, setBankName] = useState(currentSeller?.bankDetails?.bankName || '');
+  const [accountNumber, setAccountNumber] = useState(currentSeller?.bankDetails?.accountNumber || '');
+  const [ifscCode, setIfscCode] = useState(currentSeller?.bankDetails?.ifscCode || '');
+  const [branch, setBranch] = useState(currentSeller?.bankDetails?.branch || '');
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogo(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setLogo('');
+  };
 
   const handleSaveBusinessDetails = () => {
     // Create a new Customer object if none exists, otherwise update the current one
@@ -66,6 +82,15 @@ const Settings = () => {
     seller.contact = contact;
     seller.email = email;
     seller.pan = pan;
+    seller.logo = logo;
+
+    // Update bank details
+    seller.bankDetails = {
+      bankName,
+      accountNumber,
+      branch,
+      ifscCode
+    };
     
     setCurrentSeller(seller);
     toast.success('Business details saved successfully');
@@ -79,11 +104,6 @@ const Settings = () => {
   const handleSavePreferences = () => {
     // This would save to application settings in a full implementation
     toast.success('Application preferences saved successfully');
-  };
-
-  const handleSaveBankDetails = () => {
-    // This would save to application settings in a full implementation
-    toast.success('Bank details saved successfully');
   };
 
   return (
@@ -201,6 +221,39 @@ const Settings = () => {
                   onChange={(e) => setPan(e.target.value)}
                   placeholder="AAAAA0000A"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Company Logo</Label>
+                {logo ? (
+                  <div className="relative inline-block">
+                    <img 
+                      src={logo} 
+                      alt="Company Logo" 
+                      className="h-32 w-auto object-contain border rounded p-2" 
+                    />
+                    <Button 
+                      variant="destructive" 
+                      size="icon" 
+                      className="absolute top-1 right-1 h-6 w-6"
+                      onClick={handleRemoveLogo}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="border border-dashed border-gray-300 rounded p-6 text-center">
+                    <Image className="mx-auto h-8 w-8 text-gray-400" />
+                    <p className="mt-2 text-sm text-gray-500">Upload your company logo</p>
+                    <Input 
+                      id="logo" 
+                      type="file" 
+                      accept="image/*"
+                      className="mt-4"
+                      onChange={handleLogoUpload}
+                    />
+                  </div>
+                )}
               </div>
               
               <Button onClick={handleSaveBusinessDetails} className="mt-4">
@@ -404,7 +457,7 @@ const Settings = () => {
                 </div>
               </div>
               
-              <Button onClick={handleSaveBankDetails} className="mt-4">
+              <Button onClick={handleSaveBusinessDetails} className="mt-4">
                 Save Bank Details
               </Button>
             </div>

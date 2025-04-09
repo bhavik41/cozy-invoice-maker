@@ -40,6 +40,14 @@ const printStyles = `
     #invoice-to-print .no-print {
       display: none;
     }
+    #invoice-to-print table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    #invoice-to-print th, #invoice-to-print td {
+      border: 1px solid black;
+      padding: 4px;
+    }
   }
 `;
 
@@ -101,6 +109,17 @@ const InvoiceDetail = () => {
   // Check if we're using IGST or CGST+SGST based on the rates
   const useIGST = invoice.igstRate > 0;
   
+  // Format date for display
+  const formatDisplayDate = (date: Date | string) => {
+    if (!date) return '';
+    const d = typeof date === 'string' ? new Date(date) : date;
+    return d.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+  
   return (
     <div className="max-w-5xl mx-auto">
       <style>{printStyles}</style>
@@ -145,62 +164,82 @@ const InvoiceDetail = () => {
         </div>
       </div>
       
-      <Card className="p-6 mb-6" id="invoice-to-print" ref={invoiceRef}>
-        <div className="text-center border-b pb-4 mb-4">
+      <Card className="p-2 mb-6 border" id="invoice-to-print" ref={invoiceRef}>
+        <div className="text-center border-b pb-2 mb-2">
           <h1 className="text-2xl font-bold">Tax Invoice</h1>
         </div>
         
         <div className="grid grid-cols-12 border-b">
-          <div className="col-span-7 p-3 border-r">
-            <div className="mb-4">
+          <div className="col-span-7 p-2 border-r flex">
+            {invoice.seller.logo && (
+              <div className="mr-4 flex-shrink-0">
+                <img 
+                  src={invoice.seller.logo} 
+                  alt="Company Logo" 
+                  className="h-16 w-auto object-contain"
+                />
+              </div>
+            )}
+            <div>
               <h2 className="text-lg font-bold">{invoice.seller.name}</h2>
-              <p className="whitespace-pre-line text-sm">{invoice.seller.address}</p>
-            </div>
-            
-            <div className="grid grid-cols-2 text-sm gap-1">
-              <p><strong>GSTIN:</strong> {invoice.seller.gstin}</p>
-              <p><strong>State Name:</strong> {invoice.seller.state}</p>
-              <p><strong>Code:</strong> {invoice.seller.stateCode}</p>
-              <p><strong>Contact:</strong> {invoice.seller.contact}</p>
-              <p><strong>Email:</strong> {invoice.seller.email}</p>
-              <p><strong>PAN:</strong> {invoice.seller.pan}</p>
+              <p className="whitespace-pre-line text-sm"><strong>Address:</strong> {invoice.seller.address}</p>
+              
+              <div className="grid grid-cols-2 text-sm gap-1 mt-1">
+                <p><strong>GSTIN:</strong> {invoice.seller.gstin}</p>
+                <p><strong>State Name:</strong> {invoice.seller.state}</p>
+                <p><strong>Code:</strong> {invoice.seller.stateCode}</p>
+                <p><strong>Contact:</strong> {invoice.seller.contact}</p>
+                <p><strong>Email:</strong> {invoice.seller.email}</p>
+                <p><strong>PAN:</strong> {invoice.seller.pan}</p>
+              </div>
             </div>
           </div>
           
-          <div className="col-span-5 p-3">
-            <div className="grid grid-cols-2 text-sm gap-3">
-              <p><strong>Invoice No.</strong></p>
-              <p>{invoice.invoiceNumber}</p>
-              
-              <p><strong>E-way Bill No.</strong></p>
-              <p>{invoice.eWayBillNumber || '-'}</p>
-              
-              <p><strong>Dated</strong></p>
-              <p>{new Date(invoice.date).toLocaleDateString('en-IN')}</p>
-              
-              <p><strong>Mode/Terms of Payment</strong></p>
-              <p>{invoice.modeOfPayment || '-'}</p>
-              
-              <p><strong>Reference No. & Date</strong></p>
-              <p>{invoice.reference || '-'}</p>
-              
-              <p><strong>Other References</strong></p>
-              <p>{invoice.otherReferences || '-'}</p>
-              
-              <p><strong>Buyer's Order No.</strong></p>
-              <p>{invoice.buyerOrderNo || '-'}</p>
-              
-              <p><strong>Dated</strong></p>
-              <p>{invoice.dated || '-'}</p>
-            </div>
+          <div className="col-span-5 p-2">
+            <table className="w-full text-sm border-collapse">
+              <tbody>
+                <tr className="border-b">
+                  <td className="py-1 font-semibold">Invoice No.</td>
+                  <td className="py-1">{invoice.invoiceNumber}</td>
+                </tr>
+                <tr className="border-b">
+                  <td className="py-1 font-semibold">E-way Bill No.</td>
+                  <td className="py-1">{invoice.eWayBillNumber || '....'}</td>
+                </tr>
+                <tr className="border-b">
+                  <td className="py-1 font-semibold">Dated</td>
+                  <td className="py-1">{formatDisplayDate(invoice.date)}</td>
+                </tr>
+                <tr className="border-b">
+                  <td className="py-1 font-semibold">Mode/Terms of Payment</td>
+                  <td className="py-1">{invoice.modeOfPayment || '....'}</td>
+                </tr>
+                <tr className="border-b">
+                  <td className="py-1 font-semibold">Reference No. & Date</td>
+                  <td className="py-1">{invoice.reference || '....'}</td>
+                </tr>
+                <tr className="border-b">
+                  <td className="py-1 font-semibold">Other References</td>
+                  <td className="py-1">{invoice.otherReferences || '....'}</td>
+                </tr>
+                <tr className="border-b">
+                  <td className="py-1 font-semibold">Buyer's Order No.</td>
+                  <td className="py-1">{invoice.buyerOrderNo || '....'}</td>
+                </tr>
+                <tr className="border-b">
+                  <td className="py-1 font-semibold">Dated</td>
+                  <td className="py-1">{invoice.dated || '....'}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
         
         <div className="grid grid-cols-12 border-b">
-          <div className="col-span-7 p-3 border-r">
-            <h3 className="font-bold mb-2">Buyer (Bill To):</h3>
+          <div className="col-span-7 p-2 border-r">
+            <h3 className="font-bold mb-1">Buyer (Bill To):</h3>
             <p className="font-medium mb-1">{invoice.buyer.name}</p>
-            <p className="text-sm whitespace-pre-line mb-2">{invoice.buyer.address}</p>
+            <p className="text-sm mb-1"><strong>Address:</strong> {invoice.buyer.address}</p>
             
             <div className="grid grid-cols-2 text-sm gap-1">
               <p><strong>GSTIN:</strong> {invoice.buyer.gstin}</p>
@@ -210,29 +249,39 @@ const InvoiceDetail = () => {
             </div>
           </div>
           
-          <div className="col-span-5 p-3">
-            <div className="grid grid-cols-2 text-sm gap-3">
-              <p><strong>Dispatch Document No.</strong></p>
-              <p>{invoice.dispatchDocumentNo || '....'}</p>
-              
-              <p><strong>Delivery Note Date</strong></p>
-              <p>{invoice.deliveryNoteDate || new Date(invoice.date).toLocaleDateString('en-IN')}</p>
-              
-              <p><strong>Dispatched though</strong></p>
-              <p>{invoice.dispatchedThrough || '-'}</p>
-              
-              <p><strong>Destination</strong></p>
-              <p>{invoice.destination || '-'}</p>
-              
-              <p><strong>Bill of Lading/LR-RR No.</strong></p>
-              <p>{invoice.billOfLading || '-'}</p>
-              
-              <p><strong>Motor Vehicle No.</strong></p>
-              <p>{invoice.motorVehicleNo || '-'}</p>
-              
-              <p><strong>Terms of Delivery</strong></p>
-              <p>{invoice.termsOfDelivery || '-'}</p>
-            </div>
+          <div className="col-span-5 p-2">
+            <table className="w-full text-sm border-collapse">
+              <tbody>
+                <tr className="border-b">
+                  <td className="py-1 font-semibold">Dispatch Document No.</td>
+                  <td className="py-1">{invoice.dispatchDocumentNo || '....'}</td>
+                </tr>
+                <tr className="border-b">
+                  <td className="py-1 font-semibold">Delivery Note Date</td>
+                  <td className="py-1">{invoice.deliveryNoteDate || formatDisplayDate(invoice.date)}</td>
+                </tr>
+                <tr className="border-b">
+                  <td className="py-1 font-semibold">Dispatched through</td>
+                  <td className="py-1">{invoice.dispatchedThrough || '....'}</td>
+                </tr>
+                <tr className="border-b">
+                  <td className="py-1 font-semibold">Destination</td>
+                  <td className="py-1">{invoice.destination || '....'}</td>
+                </tr>
+                <tr className="border-b">
+                  <td className="py-1 font-semibold">Bill of Lading/LR-RR No.</td>
+                  <td className="py-1">{invoice.billOfLading || '....'}</td>
+                </tr>
+                <tr className="border-b">
+                  <td className="py-1 font-semibold">Motor Vehicle No.</td>
+                  <td className="py-1">{invoice.motorVehicleNo || '....'}</td>
+                </tr>
+                <tr className="border-b">
+                  <td className="py-1 font-semibold">Terms of Delivery</td>
+                  <td className="py-1">{invoice.termsOfDelivery || '....'}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
         
@@ -240,90 +289,85 @@ const InvoiceDetail = () => {
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-gray-50">
-                <th className="border p-2 text-left">No.</th>
-                <th className="border p-2 text-left">Description of Goods</th>
-                <th className="border p-2 text-center">HSN/SAC</th>
-                <th className="border p-2 text-center">GST Rate</th>
-                <th className="border p-2 text-center">Quantity</th>
-                <th className="border p-2 text-center">Rate per Unit</th>
-                <th className="border p-2 text-right">Amount</th>
+                <th className="border p-1 text-left">No.</th>
+                <th className="border p-1 text-left">Description of Goods</th>
+                <th className="border p-1 text-center">HSN/SAC</th>
+                <th className="border p-1 text-center">GST Rate</th>
+                <th className="border p-1 text-center">Quantity</th>
+                <th className="border p-1 text-center">Rate per Unit</th>
+                <th className="border p-1 text-right">Amount</th>
               </tr>
             </thead>
             <tbody>
               {invoice.items.map((item, index) => (
                 <tr key={item.id}>
-                  <td className="border p-2 text-center">{index + 1}</td>
-                  <td className="border p-2">{item.productName}</td>
-                  <td className="border p-2 text-center">{item.hsnCode}</td>
-                  <td className="border p-2 text-center">{item.gstRate}%</td>
-                  <td className="border p-2 text-center">{Number(item.quantity).toFixed(3)}</td>
-                  <td className="border p-2 text-right">{item.price}</td>
-                  <td className="border p-2 text-right">{formatCurrency(item.amount).replace('₹', '')}</td>
+                  <td className="border p-1 text-center">{index + 1}</td>
+                  <td className="border p-1">{item.productName}</td>
+                  <td className="border p-1 text-center">{item.hsnCode}</td>
+                  <td className="border p-1 text-center">{item.gstRate}%</td>
+                  <td className="border p-1 text-center">{Number(item.quantity).toFixed(3)}</td>
+                  <td className="border p-1 text-right">{item.price}</td>
+                  <td className="border p-1 text-right">{formatCurrency(item.amount).replace('₹', '')}</td>
+                </tr>
+              ))}
+              
+              {/* Empty rows to match template */}
+              {Array(Math.max(0, 5 - invoice.items.length)).fill(0).map((_, i) => (
+                <tr key={`empty-${i}`}>
+                  <td className="border p-1">&nbsp;</td>
+                  <td className="border p-1">&nbsp;</td>
+                  <td className="border p-1">&nbsp;</td>
+                  <td className="border p-1">&nbsp;</td>
+                  <td className="border p-1">&nbsp;</td>
+                  <td className="border p-1">&nbsp;</td>
+                  <td className="border p-1">&nbsp;</td>
                 </tr>
               ))}
               
               <tr>
-                <td colSpan={6} className="border p-2 text-right font-medium">Total</td>
-                <td className="border p-2 text-right font-bold">{formatCurrency(invoice.totalAmount - invoice.totalTaxAmount).replace('₹', '')}</td>
+                <td colSpan={6} className="border p-1 text-right font-medium">Total</td>
+                <td className="border p-1 text-right font-bold">{formatCurrency(invoice.totalAmount - invoice.totalTaxAmount).replace('₹', '')}</td>
               </tr>
               
               {/* Tax calculations */}
               {useIGST ? (
                 <tr>
-                  <td colSpan={3} className="border p-2 align-top">
-                    <div className="text-center">
-                      <p>IGST @ {invoice.igstRate}%</p>
-                      <p>Round Off</p>
-                    </div>
+                  <td colSpan={3} className="border p-1 text-center">
+                    <p>IGST @ {invoice.igstRate}%</p>
+                    <p>Round Off</p>
                   </td>
-                  <td colSpan={3} className="border p-2 align-top text-right">
-                    <div className="text-right">
-                      <p>IGST @ {invoice.igstRate}%</p>
-                      <p>Round Off</p>
-                    </div>
+                  <td colSpan={3} className="border p-1 align-top text-right">
+                    <p>IGST @ {invoice.igstRate}%</p>
+                    <p>Round Off</p>
                   </td>
-                  <td className="border p-2 text-right">{formatCurrency(invoice.totalTaxAmount).replace('₹', '')}</td>
+                  <td className="border p-1 text-right">{formatCurrency(invoice.totalTaxAmount).replace('₹', '')}</td>
                 </tr>
               ) : (
-                <>
-                  <tr>
-                    <td colSpan={3} rowSpan={3} className="border p-2 align-top">
-                      <div className="text-center">
-                        <p>CGST @ {invoice.cgstRate}%</p>
-                        <p>SGST @ {invoice.sgstRate}%</p>
-                        <p>Round Off</p>
-                      </div>
-                    </td>
-                    <td colSpan={3} className="border p-2 align-top text-right">
-                      <p>CGST @ {invoice.cgstRate}%</p>
-                    </td>
-                    <td className="border p-2 text-right">{formatCurrency(invoice.totalTaxAmount / 2).replace('₹', '')}</td>
-                  </tr>
-                  <tr>
-                    <td colSpan={3} className="border p-2 text-right">
-                      <p>SGST @ {invoice.sgstRate}%</p>
-                    </td>
-                    <td className="border p-2 text-right">{formatCurrency(invoice.totalTaxAmount / 2).replace('₹', '')}</td>
-                  </tr>
-                  <tr>
-                    <td colSpan={3} className="border p-2 text-right">
-                      <p>Round Off</p>
-                    </td>
-                    <td className="border p-2 text-right">0.00</td>
-                  </tr>
-                </>
+                <tr>
+                  <td colSpan={3} className="border p-1 text-center">
+                    <p>CGST @ {invoice.cgstRate}%</p>
+                    <p>SGST @ {invoice.sgstRate}%</p>
+                    <p>Round Off</p>
+                  </td>
+                  <td colSpan={3} className="border p-1 text-right">
+                    <p>CGST @ {invoice.cgstRate}%</p>
+                    <p>SGST @ {invoice.sgstRate}%</p>
+                    <p>Round Off</p>
+                  </td>
+                  <td className="border p-1 text-right">{formatCurrency(invoice.totalTaxAmount).replace('₹', '')}</td>
+                </tr>
               )}
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan={6} className="border p-3 text-right font-bold">Total</td>
-                <td className="border p-3 text-right font-bold">{formatCurrency(invoice.totalAmount).replace('₹', '')}</td>
+                <td colSpan={6} className="border p-2 text-right font-bold">Total</td>
+                <td className="border p-2 text-right font-bold">{formatCurrency(invoice.totalAmount).replace('₹', '')}</td>
               </tr>
             </tfoot>
           </table>
         </div>
         
-        <div className="border-t py-3 px-2">
+        <div className="border-t p-2">
           <p className="font-medium">Amount Chargeable (In words)</p>
           <p className="font-bold">Rupees {invoice.totalAmountInWords} Only</p>
         </div>
@@ -332,30 +376,30 @@ const InvoiceDetail = () => {
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-gray-50">
-                <th rowSpan={2} className="border p-2">HSN/SAC</th>
-                <th rowSpan={2} className="border p-2">Taxable Value</th>
+                <th rowSpan={2} className="border p-1">HSN/SAC</th>
+                <th rowSpan={2} className="border p-1">Taxable Value</th>
                 {useIGST ? (
-                  <th colSpan={2} className="border p-2">Integrated Tax</th>
+                  <th colSpan={2} className="border p-1">Integrated Tax</th>
                 ) : (
                   <>
-                    <th colSpan={2} className="border p-2">Central Tax</th>
-                    <th colSpan={2} className="border p-2">State Tax</th>
+                    <th colSpan={2} className="border p-1">Central Tax</th>
+                    <th colSpan={2} className="border p-1">State Tax</th>
                   </>
                 )}
-                <th rowSpan={2} className="border p-2">Total Tax Amount</th>
+                <th rowSpan={2} className="border p-1">Total Tax Amount</th>
               </tr>
               <tr className="bg-gray-50">
                 {useIGST ? (
                   <>
-                    <th className="border p-2">Rate</th>
-                    <th className="border p-2">Amount</th>
+                    <th className="border p-1">Rate</th>
+                    <th className="border p-1">Amount</th>
                   </>
                 ) : (
                   <>
-                    <th className="border p-2">Rate</th>
-                    <th className="border p-2">Amount</th>
-                    <th className="border p-2">Rate</th>
-                    <th className="border p-2">Amount</th>
+                    <th className="border p-1">Rate</th>
+                    <th className="border p-1">Amount</th>
+                    <th className="border p-1">Rate</th>
+                    <th className="border p-1">Amount</th>
                   </>
                 )}
               </tr>
@@ -370,59 +414,59 @@ const InvoiceDetail = () => {
                 
                 return (
                   <tr key={`tax-${item.id}`}>
-                    <td className="border p-2 text-center">{item.hsnCode}</td>
-                    <td className="border p-2 text-right">{formatCurrency(taxableValue).replace('₹', '')}</td>
+                    <td className="border p-1 text-center">{item.hsnCode}</td>
+                    <td className="border p-1 text-right">{formatCurrency(taxableValue).replace('₹', '')}</td>
                     
                     {useIGST ? (
                       <>
-                        <td className="border p-2 text-center">{item.gstRate}%</td>
-                        <td className="border p-2 text-right">{formatCurrency(igstAmount).replace('₹', '')}</td>
+                        <td className="border p-1 text-center">{item.gstRate}%</td>
+                        <td className="border p-1 text-right">{formatCurrency(igstAmount).replace('₹', '')}</td>
                       </>
                     ) : (
                       <>
-                        <td className="border p-2 text-center">{item.gstRate / 2}%</td>
-                        <td className="border p-2 text-right">{formatCurrency(centralTaxAmount).replace('₹', '')}</td>
-                        <td className="border p-2 text-center">{item.gstRate / 2}%</td>
-                        <td className="border p-2 text-right">{formatCurrency(stateTaxAmount).replace('₹', '')}</td>
+                        <td className="border p-1 text-center">{item.gstRate / 2}%</td>
+                        <td className="border p-1 text-right">{formatCurrency(centralTaxAmount).replace('₹', '')}</td>
+                        <td className="border p-1 text-center">{item.gstRate / 2}%</td>
+                        <td className="border p-1 text-right">{formatCurrency(stateTaxAmount).replace('₹', '')}</td>
                       </>
                     )}
                     
-                    <td className="border p-2 text-right">{formatCurrency(totalTax).replace('₹', '')}</td>
+                    <td className="border p-1 text-right">{formatCurrency(totalTax).replace('₹', '')}</td>
                   </tr>
                 );
               })}
               
               <tr>
-                <td className="border p-2 text-right font-bold">Total</td>
-                <td className="border p-2 text-right font-bold">{formatCurrency(invoice.totalAmount - invoice.totalTaxAmount).replace('₹', '')}</td>
+                <td className="border p-1 text-right font-bold">Total</td>
+                <td className="border p-1 text-right font-bold">{formatCurrency(invoice.totalAmount - invoice.totalTaxAmount).replace('₹', '')}</td>
                 
                 {useIGST ? (
                   <>
-                    <td className="border p-2"></td>
-                    <td className="border p-2 text-right font-bold">{formatCurrency(invoice.totalTaxAmount).replace('₹', '')}</td>
+                    <td className="border p-1"></td>
+                    <td className="border p-1 text-right font-bold">{formatCurrency(invoice.totalTaxAmount).replace('₹', '')}</td>
                   </>
                 ) : (
                   <>
-                    <td className="border p-2"></td>
-                    <td className="border p-2 text-right font-bold">{formatCurrency(invoice.totalTaxAmount / 2).replace('₹', '')}</td>
-                    <td className="border p-2"></td>
-                    <td className="border p-2 text-right font-bold">{formatCurrency(invoice.totalTaxAmount / 2).replace('₹', '')}</td>
+                    <td className="border p-1"></td>
+                    <td className="border p-1 text-right font-bold">{formatCurrency(invoice.totalTaxAmount / 2).replace('₹', '')}</td>
+                    <td className="border p-1"></td>
+                    <td className="border p-1 text-right font-bold">{formatCurrency(invoice.totalTaxAmount / 2).replace('₹', '')}</td>
                   </>
                 )}
                 
-                <td className="border p-2 text-right font-bold">{formatCurrency(invoice.totalTaxAmount).replace('₹', '')}</td>
+                <td className="border p-1 text-right font-bold">{formatCurrency(invoice.totalTaxAmount).replace('₹', '')}</td>
               </tr>
             </tbody>
           </table>
         </div>
         
-        <div className="border-t py-3 px-2">
+        <div className="border-t p-2">
           <p className="font-medium">Tax Amount (In words)</p>
           <p className="font-bold">Rupees {invoice.totalTaxAmountInWords} Only</p>
         </div>
         
-        <div className="grid grid-cols-12 mt-4">
-          <div className="col-span-7 p-3">
+        <div className="grid grid-cols-12 mt-2 border-t">
+          <div className="col-span-7 p-2">
             <div className="text-sm">
               <p className="font-bold mb-1">Company's Bank Details</p>
               <p><strong>Bank Name:</strong> {invoice.bankDetails.bankName}</p>
@@ -431,8 +475,8 @@ const InvoiceDetail = () => {
               <p><strong>IFS Code:</strong> {invoice.bankDetails.ifscCode}</p>
             </div>
             
-            <div className="mt-6">
-              <p className="font-bold mb-2">Declaration</p>
+            <div className="mt-4">
+              <p className="font-bold mb-1">Declaration</p>
               <p className="text-sm">
                 We declare that this invoice shows the actual price of the goods described 
                 and that all particulars are true and correct.
@@ -440,10 +484,10 @@ const InvoiceDetail = () => {
             </div>
           </div>
           
-          <div className="col-span-5 p-3 text-center">
-            <p className="mb-3 text-right">for {invoice.seller.name}</p>
-            <div className="h-20"></div>
-            <p className="mt-4 text-right">Authorized Signatory</p>
+          <div className="col-span-5 p-2 text-right">
+            <p className="mb-2">for {invoice.seller.name}</p>
+            <div className="h-16"></div>
+            <p className="mt-2">Authorized Signatory</p>
           </div>
         </div>
       </Card>
