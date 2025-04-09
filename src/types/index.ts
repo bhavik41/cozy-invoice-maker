@@ -21,6 +21,13 @@ export interface Customer {
   contact: string;
   email: string;
   pan: string;
+  notes?: string;
+  bankDetails?: {
+    bankName: string;
+    accountNumber: string;
+    branch: string;
+    ifscCode: string;
+  };
 }
 
 export interface InvoiceItem {

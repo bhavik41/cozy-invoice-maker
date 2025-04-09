@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -14,7 +14,7 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { useAppContext } from '@/context/AppContext';
-import { formatCurrency, formatDate, printInvoice } from '@/utils/helpers';
+import { formatCurrency, formatDate } from '@/utils/helpers';
 import {
   Dialog,
   DialogContent,
@@ -29,15 +29,27 @@ const InvoiceList = () => {
   const { invoices, filterInvoices, deleteInvoice, getCustomer } = useAppContext();
   const [searchQuery, setSearchQuery] = useState('');
   const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
+  const [displayedInvoices, setDisplayedInvoices] = useState<any[]>([]);
   
-  // For now, we'll just implement a simple search by invoice number
-  const filteredInvoices = filterInvoices({
-    // We're not using the real filter fields yet, just searching
-    customerId: searchQuery ? searchQuery : undefined
-  }).map(invoice => ({
-    ...invoice,
-    buyerName: invoice.buyer?.name || getCustomer(invoice.buyerId)?.name || 'Unknown'
-  }));
+  useEffect(() => {
+    console.log('Current invoices:', invoices);
+    // For now, we'll just implement a simple search by invoice number
+    const filtered = filterInvoices({
+      // We're not using the real filter fields yet, just searching
+      customerId: searchQuery ? searchQuery : undefined
+    });
+    
+    const processed = filtered.map(invoice => {
+      const buyerData = getCustomer(invoice.buyerId);
+      return {
+        ...invoice,
+        buyerName: invoice.buyer?.name || buyerData?.name || 'Unknown'
+      };
+    });
+    
+    console.log('Filtered and processed invoices:', processed);
+    setDisplayedInvoices(processed);
+  }, [invoices, searchQuery, filterInvoices, getCustomer]);
   
   const handleDeleteClick = (id: string) => {
     setInvoiceToDelete(id);
@@ -86,7 +98,7 @@ const InvoiceList = () => {
       </div>
       
       <Card className="p-6">
-        {filteredInvoices.length === 0 ? (
+        {displayedInvoices.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-gray-500">
               {searchQuery ? 'No invoices match your search' : 'No invoices created yet'}
@@ -112,7 +124,7 @@ const InvoiceList = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredInvoices.map((invoice) => (
+              {displayedInvoices.map((invoice) => (
                 <TableRow key={invoice.id}>
                   <TableCell className="font-medium">
                     <Link to={`/invoices/${invoice.id}`} className="hover:underline">

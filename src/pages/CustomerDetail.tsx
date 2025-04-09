@@ -25,7 +25,12 @@ const CustomerDetail = () => {
   useEffect(() => {
     if (id) {
       const customerData = getCustomer(id);
-      setCustomer(customerData);
+      if (customerData) {
+        setCustomer(customerData);
+      } else {
+        // Handle case where customer is not found
+        toast.error('Customer not found');
+      }
     }
   }, [id, getCustomer]);
   
@@ -78,8 +83,8 @@ const CustomerDetail = () => {
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div>
             <p className="text-sm text-gray-500">Contact Details</p>
-            <p className="font-medium">Email: {customer.email}</p>
-            <p className="font-medium">Phone: {customer.phone || 'N/A'}</p>
+            <p className="font-medium">Email: {customer.email || 'N/A'}</p>
+            <p className="font-medium">Phone: {customer.contact || 'N/A'}</p>
           </div>
           
           <div>
