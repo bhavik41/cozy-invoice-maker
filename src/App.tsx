@@ -5,9 +5,15 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppProvider } from './context/AppContext';
+import { AuthProvider } from './context/AuthContext';
 
 // Layouts
 import MainLayout from './components/layout/MainLayout';
+
+// Auth Pages
+import Login from './pages/Login';
+import Register from './pages/Register';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 
 // Pages
 import Dashboard from './pages/Dashboard';
@@ -32,39 +38,48 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <AppProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<MainLayout />}>
-              <Route index element={<Dashboard />} />
+      <AuthProvider>
+        <AppProvider>
+          <BrowserRouter>
+            <Routes>
+              {/* Auth Routes (Public) */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
               
-              <Route path="invoices">
-                <Route index element={<InvoiceList />} />
-                <Route path="new" element={<InvoiceCreate />} />
-                <Route path=":id" element={<InvoiceDetail />} />
+              {/* Protected Routes */}
+              <Route element={<ProtectedRoute />}>
+                <Route path="/" element={<MainLayout />}>
+                  <Route index element={<Dashboard />} />
+                  
+                  <Route path="invoices">
+                    <Route index element={<InvoiceList />} />
+                    <Route path="new" element={<InvoiceCreate />} />
+                    <Route path=":id" element={<InvoiceDetail />} />
+                  </Route>
+                  
+                  <Route path="customers">
+                    <Route index element={<CustomerList />} />
+                    <Route path="new" element={<CustomerCreate />} />
+                    <Route path=":id" element={<CustomerDetail />} />
+                  </Route>
+                  
+                  <Route path="products">
+                    <Route index element={<ProductList />} />
+                    <Route path="new" element={<ProductCreate />} />
+                    <Route path=":id" element={<ProductDetail />} />
+                  </Route>
+                  
+                  <Route path="reports" element={<Reports />} />
+                  <Route path="settings" element={<Settings />} />
+                  <Route path="backup" element={<Backup />} />
+                </Route>
               </Route>
-              
-              <Route path="customers">
-                <Route index element={<CustomerList />} />
-                <Route path="new" element={<CustomerCreate />} />
-                <Route path=":id" element={<CustomerDetail />} />
-              </Route>
-              
-              <Route path="products">
-                <Route index element={<ProductList />} />
-                <Route path="new" element={<ProductCreate />} />
-                <Route path=":id" element={<ProductDetail />} />
-              </Route>
-              
-              <Route path="reports" element={<Reports />} />
-              <Route path="settings" element={<Settings />} />
-              <Route path="backup" element={<Backup />} />
               
               <Route path="*" element={<NotFound />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
-      </AppProvider>
+            </Routes>
+          </BrowserRouter>
+        </AppProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
