@@ -59,24 +59,47 @@ export interface Invoice {
   billOfLading: string;
   motorVehicleNo: string;
   termsOfDelivery: string;
+  
+  // Seller information
   sellerId: string;
   seller: Customer;
-  buyerId: string;
-  buyer: Customer;
+  
+  // Buyer information
+  useExistingBuyer: boolean;
+  buyerId?: string;
+  buyer?: Customer;
+  buyerName?: string; 
+  buyerAddress?: string;
+  buyerGstin?: string;
+  buyerState?: string;
+  buyerStateCode?: string;
+  buyerContact?: string;
+  buyerEmail?: string;
+  buyerPan?: string;
+  placeOfSupply?: string;
+  
+  // Items and calculations
   items: InvoiceItem[];
   cgstRate: number;
   sgstRate: number;
   igstRate: number;
+  cgstAmount?: number;
+  sgstAmount?: number;
+  igstAmount?: number;
   totalAmount: number;
   totalTaxAmount: number;
   totalAmountInWords: string;
   totalTaxAmountInWords: string;
+  grandTotal?: number;
+  
+  // Bank details
   bankDetails: {
     bankName: string;
     accountNumber: string;
     branch: string;
     ifscCode: string;
   };
+  
   createdAt: Date;
   updatedAt: Date;
 }

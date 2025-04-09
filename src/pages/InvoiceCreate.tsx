@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -7,7 +6,7 @@ import * as z from 'zod';
 import { format } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
-import { ArrowLeft, CalendarIcon, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, CalendarIcon, Plus, Trash2, UserPlus } from 'lucide-react';
 
 import { useAppContext } from '@/context/AppContext';
 import { formatCurrency, generateId } from '@/utils/helpers';
@@ -36,13 +35,15 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { InvoiceItem, Customer } from '@/types';
+import { Customer, InvoiceItem } from '@/types';
 import { cn } from '@/lib/utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 
 const InvoiceFormSchema = z.object({
   invoiceNumber: z.string().min(1, { message: 'Invoice number is required' }),
   date: z.date({ required_error: 'Date is required' }),
-  buyerId: z.string().min(1, { message: 'Customer is required' }),
+  buyerId: z.string().optional(),
   eWayBillNumber: z.string().optional(),
   deliveryNote: z.string().optional(),
   modeOfPayment: z.string().optional(),
@@ -57,13 +58,23 @@ const InvoiceFormSchema = z.object({
   billOfLading: z.string().optional(),
   motorVehicleNo: z.string().optional(),
   termsOfDelivery: z.string().optional(),
+  
+  buyerName: z.string().optional(),
+  buyerAddress: z.string().optional(),
+  buyerGstin: z.string().optional(),
+  buyerState: z.string().optional(),
+  buyerStateCode: z.string().optional(),
+  buyerContact: z.string().optional(),
+  buyerEmail: z.string().optional(),
+  buyerPan: z.string().optional(),
+  placeOfSupply: z.string().optional(),
 });
 
 type InvoiceFormValues = z.infer<typeof InvoiceFormSchema>;
 
 const InvoiceCreate = () => {
   const navigate = useNavigate();
-  const { customers, products, addInvoice, currentSeller, getNextInvoiceNumber, getProduct } = useAppContext();
+  const { customers, products, addInvoice, currentSeller, getNextInvoiceNumber, getProduct, getCustomer } = useAppContext();
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
   const [totalAmount, setTotalAmount] = useState(0);
   const [totalTaxAmount, setTotalTaxAmount] = useState(0);
@@ -71,6 +82,8 @@ const InvoiceCreate = () => {
   const [sgstAmount, setSgstAmount] = useState(0);
   const [igstAmount, setIgstAmount] = useState(0);
   const [selectedBuyerId, setSelectedBuyerId] = useState<string>('');
+  const [buyerType, setBuyerType] = useState<'existing' | 'new'>('existing');
+  const [useExistingBuyer, setUseExistingBuyer] = useState(true);
 
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(InvoiceFormSchema),
@@ -91,13 +104,56 @@ const InvoiceCreate = () => {
       billOfLading: '',
       motorVehicleNo: '',
       termsOfDelivery: '',
+      
+      buyerName: '',
+      buyerAddress: '',
+      buyerGstin: '',
+      buyerState: '',
+      buyerStateCode: '',
+      buyerContact: '',
+      buyerEmail: '',
+      buyerPan: '',
+      placeOfSupply: '',
     },
   });
 
-  // Handle buyer selection change
+  const toggleBuyerType = (useExisting: boolean) => {
+    setUseExistingBuyer(useExisting);
+    setBuyerType(useExisting ? 'existing' : 'new');
+    
+    if (useExisting) {
+      form.setValue('buyerName', '');
+      form.setValue('buyerAddress', '');
+      form.setValue('buyerGstin', '');
+      form.setValue('buyerState', '');
+      form.setValue('buyerStateCode', '');
+      form.setValue('buyerContact', '');
+      form.setValue('buyerEmail', '');
+      form.setValue('buyerPan', '');
+      form.setValue('placeOfSupply', '');
+    } else {
+      form.setValue('buyerId', '');
+      setSelectedBuyerId('');
+    }
+  };
+
   const handleBuyerChange = (buyerId: string) => {
     form.setValue('buyerId', buyerId);
     setSelectedBuyerId(buyerId);
+    
+    const customer = getCustomer(buyerId);
+    if (customer) {
+      form.setValue('buyerName', customer.name);
+      form.setValue('buyerAddress', customer.address);
+      form.setValue('buyerGstin', customer.gstin);
+      form.setValue('buyerState', customer.state);
+      form.setValue('buyerStateCode', customer.stateCode);
+      form.setValue('buyerContact', customer.contact);
+      form.setValue('buyerEmail', customer.email || '');
+      form.setValue('buyerPan', customer.pan || '');
+      form.setValue('placeOfSupply', customer.state);
+    }
+    
     recalculateTaxes(invoiceItems, buyerId);
   };
 
@@ -134,7 +190,6 @@ const InvoiceCreate = () => {
       if (item.id === id) {
         const updatedItem = { ...item, [field]: value };
         
-        // If changing product, update related fields
         if (field === 'productId') {
           const selectedProduct = getProduct(value);
           if (selectedProduct) {
@@ -146,7 +201,6 @@ const InvoiceCreate = () => {
           }
         }
         
-        // If changing quantity or price, recalculate amount
         if (field === 'quantity' || field === 'price') {
           updatedItem.amount = parseFloat((updatedItem.quantity * updatedItem.price).toFixed(2));
         }
@@ -160,7 +214,6 @@ const InvoiceCreate = () => {
     recalculateTaxes(updatedItems, selectedBuyerId);
   };
 
-  // Recalculate taxes and total based on items
   const recalculateTaxes = (items: InvoiceItem[], buyerId: string) => {
     const amount = parseFloat(items.reduce((sum, item) => sum + (item.amount || 0), 0).toFixed(2));
     setTotalAmount(amount);
@@ -170,15 +223,23 @@ const InvoiceCreate = () => {
     let sgst = 0;
     let igst = 0;
     
-    // Split tax calculations based on whether customer is in same state as seller
+    let buyerStateCode = '';
+    
+    if (useExistingBuyer && buyerId) {
+      const buyer = getCustomer(buyerId);
+      if (buyer) {
+        buyerStateCode = buyer.stateCode;
+      }
+    } else {
+      buyerStateCode = form.getValues('buyerStateCode') || '';
+    }
+    
     items.forEach(item => {
       const itemTaxAmount = parseFloat((item.amount * item.gstRate / 100).toFixed(2));
       totalTax += itemTaxAmount;
       
-      // Determine if we need to apply IGST or CGST+SGST
-      if (buyerId && currentSeller) {
-        const buyer = customers.find(c => c.id === buyerId);
-        if (buyer && buyer.stateCode === currentSeller.stateCode) {
+      if (currentSeller) {
+        if (buyerStateCode && buyerStateCode === currentSeller.stateCode) {
           cgst += parseFloat((itemTaxAmount / 2).toFixed(2));
           sgst += parseFloat((itemTaxAmount / 2).toFixed(2));
         } else {
@@ -193,6 +254,12 @@ const InvoiceCreate = () => {
     setIgstAmount(parseFloat(igst.toFixed(2)));
   };
 
+  useEffect(() => {
+    if (!useExistingBuyer) {
+      recalculateTaxes(invoiceItems, '');
+    }
+  }, [form.watch('buyerStateCode')]);
+
   const onSubmit = (values: InvoiceFormValues) => {
     if (!currentSeller) {
       toast.error('Please set a seller in Settings before creating an invoice.');
@@ -204,28 +271,45 @@ const InvoiceCreate = () => {
       return;
     }
     
-    // Check if any item is missing product selection
     const missingProductItem = invoiceItems.find(item => !item.productId);
     if (missingProductItem) {
       toast.error('Please select a product for all items.');
       return;
     }
 
-    // Find selected buyer
-    const buyer = customers.find(c => c.id === values.buyerId);
-    if (!buyer) {
-      toast.error('Selected customer not found.');
+    if (useExistingBuyer && !values.buyerId) {
+      toast.error('Please select a customer.');
+      return;
+    }
+    
+    if (!useExistingBuyer && !values.buyerName) {
+      toast.error('Please enter customer name.');
       return;
     }
 
-    // Calculate GST rates
-    const cgstRate = buyer.stateCode === currentSeller.stateCode ? 
-      Math.max(...invoiceItems.map(item => item.gstRate / 2)) : 0;
-    const sgstRate = cgstRate;
-    const igstRate = buyer.stateCode !== currentSeller.stateCode ? 
-      Math.max(...invoiceItems.map(item => item.gstRate)) : 0;
+    let buyer: any;
+    let buyerId: string | undefined;
+    
+    if (useExistingBuyer && values.buyerId) {
+      const existingBuyer = getCustomer(values.buyerId);
+      if (!existingBuyer) {
+        toast.error('Selected customer not found.');
+        return;
+      }
+      buyer = existingBuyer;
+      buyerId = existingBuyer.id;
+    }
 
-    // Convert total amounts to words - placeholder for now
+    const buyerStateCode = useExistingBuyer ? 
+      buyer?.stateCode : 
+      values.buyerStateCode;
+
+    const cgstRate = buyerStateCode === currentSeller.stateCode ? 
+      Math.max(...invoiceItems.map(item => item.gstRate / 2), 0) : 0;
+    const sgstRate = cgstRate;
+    const igstRate = buyerStateCode !== currentSeller.stateCode ? 
+      Math.max(...invoiceItems.map(item => item.gstRate), 0) : 0;
+
     const totalAmountInWords = `${totalAmount + totalTaxAmount} Rupees Only`;
     const totalTaxAmountInWords = `${totalTaxAmount} Rupees Only`;
 
@@ -248,10 +332,23 @@ const InvoiceCreate = () => {
       motorVehicleNo: values.motorVehicleNo || '',
       termsOfDelivery: values.termsOfDelivery || '',
       items: invoiceItems,
+      
       sellerId: currentSeller.id,
       seller: currentSeller,
+      
+      useExistingBuyer,
+      buyerId,
       buyer,
-      buyerId: buyer.id,
+      buyerName: useExistingBuyer ? buyer?.name : values.buyerName,
+      buyerAddress: useExistingBuyer ? buyer?.address : values.buyerAddress,
+      buyerGstin: useExistingBuyer ? buyer?.gstin : values.buyerGstin,
+      buyerState: useExistingBuyer ? buyer?.state : values.buyerState,
+      buyerStateCode: useExistingBuyer ? buyer?.stateCode : values.buyerStateCode,
+      buyerContact: useExistingBuyer ? buyer?.contact : values.buyerContact,
+      buyerEmail: useExistingBuyer ? buyer?.email : values.buyerEmail,
+      buyerPan: useExistingBuyer ? buyer?.pan : values.buyerPan,
+      placeOfSupply: useExistingBuyer ? buyer?.state : values.placeOfSupply,
+      
       cgstRate,
       sgstRate,
       igstRate,
@@ -263,12 +360,14 @@ const InvoiceCreate = () => {
       totalAmountInWords,
       totalTaxAmountInWords,
       grandTotal: totalAmount + totalTaxAmount,
+      
       bankDetails: {
         bankName: currentSeller.bankDetails?.bankName || '',
         accountNumber: currentSeller.bankDetails?.accountNumber || '',
         branch: currentSeller.bankDetails?.branch || '',
         ifscCode: currentSeller.bankDetails?.ifscCode || '',
       },
+      
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -301,7 +400,6 @@ const InvoiceCreate = () => {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Invoice Number Field */}
                 <FormField
                   control={form.control}
                   name="invoiceNumber"
@@ -316,7 +414,6 @@ const InvoiceCreate = () => {
                   )}
                 />
                 
-                {/* Date Field */}
                 <FormField
                   control={form.control}
                   name="date"
@@ -357,65 +454,12 @@ const InvoiceCreate = () => {
                   )}
                 />
                 
-                {/* Customer Field */}
-                <FormField
-                  control={form.control}
-                  name="buyerId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Customer</FormLabel>
-                      <Select
-                        onValueChange={(value) => handleBuyerChange(value)}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a customer" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {customers.length === 0 ? (
-                            <SelectItem value="no-customers" disabled>
-                              No customers available
-                            </SelectItem>
-                          ) : (
-                            customers.map((customer) => (
-                              <SelectItem key={customer.id} value={customer.id}>
-                                {customer.name}
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                {/* E-Way Bill Number Field */}
                 <FormField
                   control={form.control}
                   name="eWayBillNumber"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>E-Way Bill Number</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              {/* Additional Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="deliveryNote"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Delivery Note</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
@@ -437,13 +481,29 @@ const InvoiceCreate = () => {
                     </FormItem>
                   )}
                 />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="deliveryNote"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Delivery Note</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 
                 <FormField
                   control={form.control}
                   name="reference"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Reference</FormLabel>
+                      <FormLabel>Reference No. & Date</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
@@ -465,9 +525,337 @@ const InvoiceCreate = () => {
                     </FormItem>
                   )}
                 />
+                
+                <FormField
+                  control={form.control}
+                  name="buyerOrderNo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Buyer's Order No.</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="dated"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Dated</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="date" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="dispatchDocumentNo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Dispatch Document No.</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="deliveryNoteDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Delivery Note Date</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="date" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="dispatchedThrough"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Dispatched Through</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="destination"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Destination</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="billOfLading"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bill of Landing/LR-RR No.</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="motorVehicleNo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Motor Vehicle No.</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
               
-              {/* Invoice Items */}
+              <div className="border p-4 rounded-md">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium">Buyer Details</h3>
+                  <div className="flex items-center space-x-2">
+                    <span className={!useExistingBuyer ? "font-medium" : "text-gray-500"}>One-time Customer</span>
+                    <Switch
+                      checked={useExistingBuyer}
+                      onCheckedChange={toggleBuyerType}
+                      aria-label="Toggle buyer type"
+                    />
+                    <span className={useExistingBuyer ? "font-medium" : "text-gray-500"}>Existing Customer</span>
+                  </div>
+                </div>
+                
+                {useExistingBuyer ? (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="buyerId"
+                      render={({ field }) => (
+                        <FormItem className="mb-4">
+                          <FormLabel>Customer</FormLabel>
+                          <Select
+                            onValueChange={(value) => handleBuyerChange(value)}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a customer" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {customers.length === 0 ? (
+                                <SelectItem value="no-customers" disabled>
+                                  No customers available
+                                </SelectItem>
+                              ) : (
+                                customers.map((customer) => (
+                                  <SelectItem key={customer.id} value={customer.id}>
+                                    {customer.name}
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {selectedBuyerId && (
+                      <div className="mt-4 grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-md">
+                        <div className="space-y-2">
+                          <p className="text-sm text-gray-500">Name:</p>
+                          <p className="font-medium">{form.getValues('buyerName')}</p>
+                          
+                          <p className="text-sm text-gray-500">Address:</p>
+                          <p className="font-medium">{form.getValues('buyerAddress')}</p>
+                          
+                          <p className="text-sm text-gray-500">GSTIN:</p>
+                          <p className="font-medium">{form.getValues('buyerGstin')}</p>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <p className="text-sm text-gray-500">State:</p>
+                          <p className="font-medium">{form.getValues('buyerState')} ({form.getValues('buyerStateCode')})</p>
+                          
+                          <p className="text-sm text-gray-500">Contact:</p>
+                          <p className="font-medium">{form.getValues('buyerContact')}</p>
+                          
+                          <p className="text-sm text-gray-500">Email:</p>
+                          <p className="font-medium">{form.getValues('buyerEmail') || 'N/A'}</p>
+                          
+                          <p className="text-sm text-gray-500">PAN:</p>
+                          <p className="font-medium">{form.getValues('buyerPan') || 'N/A'}</p>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="buyerName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Customer Name</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="buyerAddress"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Address</FormLabel>
+                            <FormControl>
+                              <Textarea rows={2} {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="buyerGstin"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>GSTIN</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <div className="grid grid-cols-2 gap-2">
+                        <FormField
+                          control={form.control}
+                          name="buyerState"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>State</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="buyerStateCode"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>State Code</FormLabel>
+                              <FormControl>
+                                <Input {...field} onChange={(e) => {
+                                  field.onChange(e);
+                                  recalculateTaxes(invoiceItems, '');
+                                }} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      <FormField
+                        control={form.control}
+                        name="buyerContact"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Contact</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="buyerEmail"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input {...field} type="email" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="buyerPan"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>PAN</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="placeOfSupply"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Place of Supply</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+              
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-medium">Items</h3>
@@ -583,7 +971,6 @@ const InvoiceCreate = () => {
                 )}
               </div>
               
-              {/* Totals */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
                 <div>
                   <FormField
