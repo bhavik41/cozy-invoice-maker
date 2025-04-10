@@ -32,9 +32,7 @@ import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient();
 
-// The App structure remains the same, but now we've ensured that
-// the AuthProvider wraps AppProvider, so the company-based filtering
-// will work properly. The actual filtering happens in AppContext.
+// The App structure remains the same, but now we're using our refactored context providers
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>

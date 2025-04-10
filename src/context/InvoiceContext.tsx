@@ -1,0 +1,174 @@
+
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { Invoice, InvoiceFilter } from '@/types';
+import { toast } from 'sonner';
+import { useBaseData } from './BaseDataContext';
+import * as storage from '@/utils/storage';
+
+interface InvoiceContextProps {
+  invoices: Invoice[];
+  addInvoice: (invoice: Invoice) => Promise<void>;
+  updateInvoice: (invoice: Invoice) => Promise<void>;
+  deleteInvoice: (id: string) => Promise<void>;
+  getInvoice: (id: string) => Invoice | undefined;
+  filterInvoices: (filter: InvoiceFilter) => Invoice[];
+  getNextInvoiceNumber: () => string;
+}
+
+const InvoiceContext = createContext<InvoiceContextProps | undefined>(undefined);
+
+export const InvoiceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [allInvoices, setAllInvoices] = useState<Invoice[]>([]);
+  const { filterByCompany, addCompanyId } = useBaseData();
+  
+  // Filtered invoices based on current user's company
+  const invoices = filterByCompany(allInvoices);
+
+  // Load invoices on mount
+  useEffect(() => {
+    const loadInvoices = async () => {
+      const loadedInvoices = await storage.getItems<Invoice>('invoices');
+      setAllInvoices(loadedInvoices);
+    };
+    
+    loadInvoices();
+  }, []);
+
+  // Save invoices when they change (localStorage only)
+  useEffect(() => {
+    if (!storage.isElectron) {
+      storage.saveItems('invoices', allInvoices);
+    }
+  }, [allInvoices]);
+
+  // Add an invoice
+  const addInvoice = async (invoice: Invoice): Promise<void> => {
+    try {
+      // Add company ID
+      const invoiceWithCompany = addCompanyId(invoice);
+      
+      // Add to storage
+      await storage.addItem('invoices', invoiceWithCompany);
+      
+      // Update state
+      setAllInvoices(prev => [...prev, invoiceWithCompany]);
+      toast.success('Invoice created successfully');
+    } catch (error) {
+      console.error('Error adding invoice:', error);
+      toast.error('Failed to create invoice');
+    }
+  };
+
+  // Update an invoice
+  const updateInvoice = async (invoice: Invoice): Promise<void> => {
+    try {
+      // Get existing invoice
+      const existingInvoice = allInvoices.find(i => i.id === invoice.id);
+      if (!existingInvoice) {
+        throw new Error('Invoice not found');
+      }
+      
+      // Ensure invoice has the same companyId as before
+      const companyId = (existingInvoice as any)?.companyId || 'company-1';
+      const updatedInvoice = {
+        ...invoice,
+        companyId
+      } as Invoice & { companyId: string };
+      
+      // Update in storage
+      await storage.updateItem('invoices', updatedInvoice);
+      
+      // Update state
+      setAllInvoices(prev => prev.map(i => i.id === invoice.id ? updatedInvoice : i));
+      toast.success('Invoice updated successfully');
+    } catch (error) {
+      console.error('Error updating invoice:', error);
+      toast.error('Failed to update invoice');
+    }
+  };
+
+  // Delete an invoice
+  const deleteInvoice = async (id: string): Promise<void> => {
+    try {
+      // Delete from storage
+      await storage.deleteItem<Invoice>('invoices', id);
+      
+      // Update state
+      setAllInvoices(prev => prev.filter(i => i.id !== id));
+      toast.success('Invoice deleted successfully');
+    } catch (error) {
+      console.error('Error deleting invoice:', error);
+      toast.error('Failed to delete invoice');
+    }
+  };
+
+  // Get an invoice by ID
+  const getInvoice = (id: string): Invoice | undefined => {
+    // First check filtered invoices (which respect company isolation)
+    return invoices.find(i => i.id === id);
+  };
+
+  // Generate next invoice number
+  const getNextInvoiceNumber = (): string => {
+    if (invoices.length === 0) {
+      return 'INV-0001';
+    }
+
+    const invoiceNumbers = invoices.map(i => {
+      const match = i.invoiceNumber.match(/INV-(\d+)/);
+      return match ? parseInt(match[1]) : 0;
+    });
+
+    const maxNumber = Math.max(...invoiceNumbers);
+    return `INV-${String(maxNumber + 1).padStart(4, '0')}`;
+  };
+
+  // Filter invoices
+  const filterInvoices = (filter: InvoiceFilter): Invoice[] => {
+    let filtered = [...invoices];
+
+    if (filter.startDate) {
+      filtered = filtered.filter(i => new Date(i.date) >= filter.startDate!);
+    }
+
+    if (filter.endDate) {
+      filtered = filtered.filter(i => new Date(i.date) <= filter.endDate!);
+    }
+
+    if (filter.customerId) {
+      filtered = filtered.filter(i => i.buyerId === filter.customerId);
+    }
+
+    if (filter.minAmount !== undefined) {
+      filtered = filtered.filter(i => i.totalAmount >= filter.minAmount!);
+    }
+
+    if (filter.maxAmount !== undefined) {
+      filtered = filtered.filter(i => i.totalAmount <= filter.maxAmount!);
+    }
+
+    return filtered;
+  };
+
+  return (
+    <InvoiceContext.Provider value={{
+      invoices,
+      addInvoice,
+      updateInvoice,
+      deleteInvoice,
+      getInvoice,
+      filterInvoices,
+      getNextInvoiceNumber
+    }}>
+      {children}
+    </InvoiceContext.Provider>
+  );
+};
+
+export const useInvoices = () => {
+  const context = useContext(InvoiceContext);
+  if (context === undefined) {
+    throw new Error('useInvoices must be used within an InvoiceProvider');
+  }
+  return context;
+};
