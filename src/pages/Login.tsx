@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogIn, Eye, EyeOff } from 'lucide-react';
+import { LogIn, Eye, EyeOff, Info } from 'lucide-react';
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -28,6 +28,7 @@ const Login = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
 
   // Redirect if already authenticated
   React.useEffect(() => {
@@ -46,6 +47,7 @@ const Login = () => {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
+    setLoginError('');
     try {
       // Trim input to prevent whitespace issues
       const email = values.email.trim();
@@ -55,9 +57,11 @@ const Login = () => {
       } else {
         // Focus on email field for retry
         form.setFocus('email');
+        setLoginError('Invalid email or password. Please check your credentials and try again.');
       }
     } catch (error) {
       console.error('Login form error:', error);
+      setLoginError('An unexpected error occurred. Please try again later.');
     } finally {
       setIsLoading(false);
     }
@@ -126,6 +130,12 @@ const Login = () => {
                   </FormItem>
                 )}
               />
+              {loginError && (
+                <div className="bg-red-50 p-3 rounded-md flex items-start gap-2">
+                  <Info className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-red-700">{loginError}</p>
+                </div>
+              )}
               <Button 
                 type="submit" 
                 className="w-full" 
