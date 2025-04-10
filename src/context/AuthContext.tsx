@@ -7,6 +7,7 @@ interface User {
   email: string;
   name: string;
   role: string;
+  companyId: string; // Added company identifier
 }
 
 interface AuthContextType {
@@ -57,10 +58,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           id: '1',
           email: 'demo@example.com',
           name: 'Demo User',
-          role: 'admin'
+          role: 'admin',
+          companyId: 'company-1'
         };
         
         // Save user to localStorage
+        localStorage.setItem('user', JSON.stringify(userData));
+        setUser(userData);
+        toast.success('Successfully logged in');
+        return true;
+      }
+      
+      // Additional mock user for testing company isolation
+      if (email === 'user@example.com' && password === 'password') {
+        const userData: User = {
+          id: '2',
+          email: 'user@example.com',
+          name: 'Test User',
+          role: 'user',
+          companyId: 'company-2'
+        };
+        
         localStorage.setItem('user', JSON.stringify(userData));
         setUser(userData);
         toast.success('Successfully logged in');
@@ -85,7 +103,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: Date.now().toString(),
         email,
         name,
-        role: 'user'
+        role: 'user',
+        companyId: `company-${Date.now()}` // Generate a unique company ID for new users
       };
       
       // Save user to localStorage
