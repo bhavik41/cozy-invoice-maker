@@ -2,9 +2,10 @@
 import React from 'react';
 import { toast } from 'sonner';
 import { BaseDataProvider } from './BaseDataContext';
-import { ProductProvider } from './ProductContext';
-import { CustomerProvider } from './CustomerContext';
-import { InvoiceProvider } from './InvoiceContext';
+import { ProductProvider, useProducts } from './ProductContext';
+import { CustomerProvider, useCustomers } from './CustomerContext';
+import { InvoiceProvider, useInvoices } from './InvoiceContext';
+import { useBaseData } from './BaseDataContext';
 import * as storage from '@/utils/storage';
 
 // Main AppProvider that combines all the individual providers
@@ -27,13 +28,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
 // Export a combined hook for backwards compatibility
 export const useAppContext = () => {
-  // Import the individual hooks
-  const { useProducts } = require('./ProductContext');
-  const { useCustomers } = require('./CustomerContext');
-  const { useInvoices } = require('./InvoiceContext');
-  const { useBaseData } = require('./BaseDataContext');
-  
-  // Get the contexts
+  // Get the contexts directly using the imported hooks
   const productContext = useProducts();
   const customerContext = useCustomers();
   const invoiceContext = useInvoices();
