@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogIn } from 'lucide-react';
+import { LogIn, Eye, EyeOff } from 'lucide-react';
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -26,6 +26,8 @@ const formSchema = z.object({
 const Login = () => {
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Redirect if already authenticated
   React.useEffect(() => {
@@ -43,10 +45,26 @@ const Login = () => {
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    const success = await login(values.email, values.password);
-    if (success) {
-      navigate('/');
+    setIsLoading(true);
+    try {
+      // Trim input to prevent whitespace issues
+      const email = values.email.trim();
+      const success = await login(email, values.password);
+      if (success) {
+        navigate('/');
+      } else {
+        // Focus on email field for retry
+        form.setFocus('email');
+      }
+    } catch (error) {
+      console.error('Login form error:', error);
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const toggleShowPassword = () => {
+    setShowPassword(!showPassword);
   };
 
   return (
@@ -71,7 +89,11 @@ const Login = () => {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="name@example.com" {...field} />
+                      <Input 
+                        placeholder="name@example.com" 
+                        autoComplete="email"
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -84,13 +106,33 @@ const Login = () => {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Enter your password" {...field} />
+                      <div className="relative">
+                        <Input 
+                          type={showPassword ? "text" : "password"} 
+                          placeholder="Enter your password" 
+                          autoComplete="current-password"
+                          {...field} 
+                        />
+                        <button 
+                          type="button"
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
+                          onClick={toggleShowPassword}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full">Sign In</Button>
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={isLoading}
+              >
+                {isLoading ? "Signing in..." : "Sign In"}
+              </Button>
             </form>
           </Form>
         </CardContent>

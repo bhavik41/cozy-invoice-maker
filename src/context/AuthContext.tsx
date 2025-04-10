@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
@@ -52,8 +51,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // For demo purposes, we'll use a mock authentication
       // In a real app, you would make an API call to your backend
       
-      // Mock credentials for demo
-      if (email === 'demo@example.com' && password === 'password') {
+      // Fix: Trim email and make case-insensitive comparison
+      const trimmedEmail = email.trim().toLowerCase();
+      
+      // Mock credentials for demo - case insensitive matching
+      if (trimmedEmail === 'demo@example.com' && password === 'password') {
         const userData: User = {
           id: '1',
           email: 'demo@example.com',
@@ -70,7 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       // Additional mock user for testing company isolation
-      if (email === 'user@example.com' && password === 'password') {
+      if (trimmedEmail === 'user@example.com' && password === 'password') {
         const userData: User = {
           id: '2',
           email: 'user@example.com',
@@ -85,11 +87,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return true;
       }
       
-      toast.error('Invalid credentials');
+      // Improve error message
+      toast.error('Invalid email or password. Please try again.');
+      console.log('Login attempt failed:', { email: trimmedEmail }); // Debug log
       return false;
     } catch (error) {
       console.error('Login error:', error);
-      toast.error('Login failed');
+      toast.error('Login failed. Please try again later.');
       return false;
     }
   };
