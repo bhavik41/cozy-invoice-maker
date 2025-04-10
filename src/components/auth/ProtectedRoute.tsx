@@ -22,17 +22,18 @@ const ProtectedRoute: React.FC = () => {
     return <Navigate to="/login" replace />;
   }
   
-  // Company access validation would be handled in AppContext
-  // We can add specific route-based restrictions here if needed
+  // Remove the role-based restriction for settings and backup pages
+  // This allows all authenticated users to access these pages
   
-  // For example, if certain routes should only be accessible to admins:
-  const adminOnlyRoutes = ['/settings', '/backup'];
-  if (adminOnlyRoutes.some(route => location.pathname.startsWith(route)) && user?.role !== 'admin') {
-    toast.error('You do not have permission to access this page');
-    return <Navigate to="/" replace />;
-  }
+  // Only specific admin-only routes that should be restricted
+  // For example, if you have admin-only routes in the future:
+  // const adminOnlyRoutes = ['/admin-dashboard', '/user-management'];
+  // if (adminOnlyRoutes.some(route => location.pathname.startsWith(route)) && user?.role !== 'admin') {
+  //   toast.error('You do not have permission to access this page');
+  //   return <Navigate to="/" replace />;
+  // }
   
-  // Render children if authenticated and authorized
+  // Render children if authenticated
   return <Outlet />;
 };
 
