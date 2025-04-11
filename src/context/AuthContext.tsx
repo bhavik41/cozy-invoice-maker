@@ -7,7 +7,8 @@ interface User {
   email: string;
   name: string;
   role: string;
-  companyId: string; // Added company identifier
+  companyId: string;
+  companyDomain: string; // Added for domain tracking
 }
 
 interface AuthContextType {
@@ -34,6 +35,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   // Store registered users in memory for demo purposes
   const [registeredUsers, setRegisteredUsers] = useState<{[email: string]: {password: string, userData: User}}>({});
+  // Track companies by domain
+  const [companyDomains, setCompanyDomains] = useState<{[domain: string]: string}>({});
 
   useEffect(() => {
     // Check for user in localStorage on initial load
@@ -57,8 +60,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
     
+    // Check for company domains in localStorage
+    const storedCompanyDomains = localStorage.getItem('companyDomains');
+    if (storedCompanyDomains) {
+      try {
+        setCompanyDomains(JSON.parse(storedCompanyDomains));
+      } catch (error) {
+        console.error('Failed to parse company domains data:', error);
+      }
+    }
+    
     setLoading(false);
   }, []);
+
+  // Helper to extract domain from email
+  const extractDomain = (email: string): string => {
+    const parts = email.split('@');
+    return parts.length === 2 ? parts[1] : '';
+  };
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
@@ -75,7 +94,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: 'demo@example.com',
           name: 'Demo User',
           role: 'admin',
-          companyId: 'company-1'
+          companyId: 'company-1',
+          companyDomain: 'example.com'
         };
         
         // Save user to localStorage
@@ -92,7 +112,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: 'user@example.com',
           name: 'Test User',
           role: 'user',
-          companyId: 'company-2'
+          companyId: 'company-2',
+          companyDomain: 'example.com'
         };
         
         localStorage.setItem('user', JSON.stringify(userData));
@@ -132,7 +153,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const register = async (email: string, password: string, name: string): Promise<boolean> => {
     try {
-      const trimmedEmail = email.trim();
+      const trimmedEmail = email.trim().toLowerCase();
+      const domain = extractDomain(trimmedEmail);
+      
+      if (!domain) {
+        toast.error('Invalid email format. Please provide a valid email.');
+        return false;
+      }
 
       // Check if email already exists
       if (trimmedEmail.toLowerCase() === 'demo@example.com' || 
@@ -142,12 +169,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
       
+      // Check if the domain is already associated with a company
+      let companyId: string;
+      if (companyDomains[domain]) {
+        // Use existing company ID for this domain
+        companyId = companyDomains[domain];
+        console.log(`Using existing company ID ${companyId} for domain ${domain}`);
+      } else {
+        // Create new company ID for this domain
+        companyId = `company-${Date.now()}`;
+        
+        // Save the domain to company mapping
+        const updatedCompanyDomains = {
+          ...companyDomains,
+          [domain]: companyId
+        };
+        
+        localStorage.setItem('companyDomains', JSON.stringify(updatedCompanyDomains));
+        setCompanyDomains(updatedCompanyDomains);
+        console.log(`Created new company ID ${companyId} for domain ${domain}`);
+      }
+      
       const userData: User = {
         id: Date.now().toString(),
         email: trimmedEmail,
         name,
         role: 'user',
-        companyId: `company-${Date.now()}` // Generate a unique company ID for new users
+        companyId,
+        companyDomain: domain
       };
       
       // Store in registered users
@@ -168,8 +217,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(userData);
       
       toast.success('Registration successful');
-      console.log('User registered:', { email: trimmedEmail });
+      console.log('User registered:', { email: trimmedEmail, companyId, domain });
       console.log('Updated registered users:', updatedUsers);
+      console.log('Company domains mapping:', updatedCompanyDomains);
       
       return true;
     } catch (error) {

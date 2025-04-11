@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Info } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -69,6 +69,13 @@ const Register = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="bg-blue-50 p-3 rounded-md flex items-start gap-2 mb-4">
+            <Info className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-blue-700">
+              Users with the same email domain will be associated with the same company and can access the same data.
+            </p>
+          </div>
+          
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
@@ -91,9 +98,12 @@ const Register = () => {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="name@example.com" {...field} />
+                      <Input placeholder="name@yourcompany.com" {...field} />
                     </FormControl>
                     <FormMessage />
+                    <p className="text-xs text-gray-500">
+                      Note: All users from the same email domain will share company data.
+                    </p>
                   </FormItem>
                 )}
               />
