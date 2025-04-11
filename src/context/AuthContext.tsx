@@ -219,7 +219,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.success('Registration successful');
       console.log('User registered:', { email: trimmedEmail, companyId, domain });
       console.log('Updated registered users:', updatedUsers);
-      console.log('Company domains mapping:', updatedCompanyDomains);
+      console.log('Company domains mapping:', companyDomains);
       
       return true;
     } catch (error) {
