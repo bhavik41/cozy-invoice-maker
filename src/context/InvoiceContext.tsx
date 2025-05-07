@@ -72,6 +72,8 @@ export const InvoiceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Update an invoice
   const updateInvoice = async (invoice: Invoice): Promise<void> => {
     try {
+      console.log("Updating invoice with ID:", invoice.id);
+      
       // Get existing invoice
       const existingInvoice = allInvoices.find(i => i.id === invoice.id);
       if (!existingInvoice) {
@@ -85,7 +87,7 @@ export const InvoiceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         companyId
       } as Invoice & { companyId: string };
       
-      console.log("Updating invoice:", updatedInvoice);
+      console.log("Full updated invoice:", updatedInvoice);
       
       // Update in storage
       await storage.updateItem('invoices', updatedInvoice);
@@ -96,6 +98,7 @@ export const InvoiceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } catch (error) {
       console.error('Error updating invoice:', error);
       toast.error('Failed to update invoice');
+      throw error; // Re-throw to handle in component if needed
     }
   };
 

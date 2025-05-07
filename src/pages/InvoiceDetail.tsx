@@ -36,6 +36,9 @@ const printStyles = `
       left: 0;
       top: 0;
       width: 100%;
+      padding: 0 !important;
+      margin: 0 !important;
+      font-size: 10px !important;
     }
     #invoice-to-print .no-print {
       display: none;
@@ -43,31 +46,42 @@ const printStyles = `
     #invoice-to-print table {
       width: 100%;
       border-collapse: collapse;
+      page-break-inside: avoid;
     }
     #invoice-to-print th, #invoice-to-print td {
       border: 1px solid black;
-      padding: 4px;
-      font-size: 12px;
-    }
-    #invoice-to-print {
-      font-size: 12px;
-    }
-    @page {
-      size: A4;
-      margin: 10mm;
+      padding: 2px;
+      font-size: 10px;
     }
     #invoice-to-print h1 {
-      font-size: 18px;
+      font-size: 16px;
+      text-align: center;
+      margin: 4px 0;
     }
     #invoice-to-print h2, #invoice-to-print h3 {
-      font-size: 14px;
+      font-size: 12px;
+      margin: 2px 0;
     }
     #invoice-to-print .grid {
       display: block;
     }
-    #invoice-to-print .col-span-7, #invoice-to-print .col-span-5 {
-      width: 100%;
-      display: block;
+    @page {
+      size: A4;
+      margin: 5mm;
+    }
+    #invoice-to-print .tax-summary-table {
+      font-size: 10px;
+    }
+    #invoice-to-print .seller-details, #invoice-to-print .buyer-details {
+      padding: 2px !important;
+    }
+    #invoice-to-print .invoice-heading {
+      font-size: 15px !important;
+      padding: 2px !important;
+      margin: 2px 0 !important;
+    }
+    #invoice-to-print .company-name {
+      font-size: 14px !important;
     }
   }
 `;
@@ -229,11 +243,11 @@ const InvoiceDetail = () => {
       
       <Card className="p-2 mb-6 border" id="invoice-to-print" ref={invoiceRef}>
         <div className="text-center border-b pb-2 mb-2">
-          <h1 className="text-2xl font-bold">Tax Invoice</h1>
+          <h1 className="text-2xl font-bold invoice-heading">Tax Invoice</h1>
         </div>
         
         <div className="grid grid-cols-12 border-b">
-          <div className="col-span-7 p-2 border-r flex">
+          <div className="col-span-7 p-2 border-r flex seller-details">
             {seller.logo && (
               <div className="mr-4 flex-shrink-0">
                 <img 
@@ -244,7 +258,7 @@ const InvoiceDetail = () => {
               </div>
             )}
             <div>
-              <h2 className="text-lg font-bold">{seller.name}</h2>
+              <h2 className="text-lg font-bold company-name">{seller.name}</h2>
               <p className="whitespace-pre-line text-sm"><strong>Address:</strong> {seller.address}</p>
               
               <div className="grid grid-cols-2 text-sm gap-1 mt-1">
@@ -289,7 +303,7 @@ const InvoiceDetail = () => {
                   <td className="py-1 font-semibold">Buyer's Order No.</td>
                   <td className="py-1">{invoice.buyerOrderNo || '....'}</td>
                 </tr>
-                <tr className="border-b">
+                <tr>
                   <td className="py-1 font-semibold">Dated</td>
                   <td className="py-1">{invoice.dated || '....'}</td>
                 </tr>
@@ -299,7 +313,7 @@ const InvoiceDetail = () => {
         </div>
         
         <div className="grid grid-cols-12 border-b">
-          <div className="col-span-7 p-2 border-r">
+          <div className="col-span-7 p-2 border-r buyer-details">
             <h3 className="font-bold mb-1">Buyer (Bill To):</h3>
             <p className="font-medium mb-1">{buyer.name}</p>
             <p className="text-sm mb-1"><strong>Address:</strong> {buyer.address}</p>
@@ -339,7 +353,7 @@ const InvoiceDetail = () => {
                   <td className="py-1 font-semibold">Motor Vehicle No.</td>
                   <td className="py-1">{invoice.motorVehicleNo || '....'}</td>
                 </tr>
-                <tr className="border-b">
+                <tr>
                   <td className="py-1 font-semibold">Terms of Delivery</td>
                   <td className="py-1">{invoice.termsOfDelivery || '....'}</td>
                 </tr>
@@ -371,19 +385,6 @@ const InvoiceDetail = () => {
                   <td className="border p-1 text-center">{Number(item.quantity || 0).toFixed(3)}</td>
                   <td className="border p-1 text-right">{item.price || 0}</td>
                   <td className="border p-1 text-right">{formatCurrency(item.amount || 0).replace('₹', '')}</td>
-                </tr>
-              ))}
-              
-              {/* Empty rows to match template - reduced for one-page print */}
-              {Array(Math.max(0, 2 - (invoice.items || []).length)).fill(0).map((_, i) => (
-                <tr key={`empty-${i}`}>
-                  <td className="border p-1">&nbsp;</td>
-                  <td className="border p-1">&nbsp;</td>
-                  <td className="border p-1">&nbsp;</td>
-                  <td className="border p-1">&nbsp;</td>
-                  <td className="border p-1">&nbsp;</td>
-                  <td className="border p-1">&nbsp;</td>
-                  <td className="border p-1">&nbsp;</td>
                 </tr>
               ))}
               
@@ -430,13 +431,13 @@ const InvoiceDetail = () => {
           </table>
         </div>
         
-        <div className="border-t p-2">
+        <div className="border-t p-1">
           <p className="font-medium">Amount Chargeable (In words)</p>
           <p className="font-bold">Rupees {invoice.totalAmountInWords || 'N/A'} Only</p>
         </div>
         
         <div className="overflow-x-auto border-t">
-          <table className="w-full border-collapse">
+          <table className="w-full border-collapse tax-summary-table">
             <thead>
               <tr className="bg-gray-50">
                 <th rowSpan={2} className="border p-1">HSN/SAC</th>
@@ -525,7 +526,7 @@ const InvoiceDetail = () => {
           </table>
         </div>
         
-        <div className="border-t p-2">
+        <div className="border-t p-1">
           <p className="font-medium">Tax Amount (In words)</p>
           <p className="font-bold">Rupees {invoice.totalTaxAmountInWords || 'N/A'} Only</p>
         </div>
