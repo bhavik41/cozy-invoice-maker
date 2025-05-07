@@ -117,6 +117,42 @@ export const InvoiceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       // First check filtered invoices (which respect company isolation)
       const invoice = invoices.find(i => i.id === id);
+      
+      // Make sure seller and buyer are defined objects to prevent "Cannot read properties of undefined" errors
+      if (invoice) {
+        // Ensure seller is defined
+        if (!invoice.seller) {
+          console.warn(`Invoice ${id} has no seller data, providing default empty object`);
+          invoice.seller = {
+            id: '',
+            name: 'N/A',
+            address: 'N/A',
+            gstin: 'N/A',
+            state: 'N/A',
+            stateCode: 'N/A',
+            contact: 'N/A',
+            email: 'N/A',
+            pan: 'N/A'
+          };
+        }
+        
+        // Ensure buyer is defined
+        if (!invoice.buyer) {
+          console.warn(`Invoice ${id} has no buyer data, providing default empty object`);
+          invoice.buyer = {
+            id: '',
+            name: 'N/A',
+            address: 'N/A',
+            gstin: 'N/A',
+            state: 'N/A', 
+            stateCode: 'N/A',
+            contact: 'N/A',
+            email: 'N/A',
+            pan: 'N/A'
+          };
+        }
+      }
+      
       return invoice;
     } catch (error) {
       console.error('Error getting invoice:', error);

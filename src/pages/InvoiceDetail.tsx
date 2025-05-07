@@ -106,9 +106,29 @@ const InvoiceDetail = () => {
     );
   }
 
-  // Ensure seller and buyer objects exist before accessing their properties
-  const seller = invoice.seller || {};
-  const buyer = invoice.buyer || {};
+  // Ensure seller and buyer objects exist with default values if needed
+  const seller = invoice.seller || {
+    name: 'N/A',
+    address: 'N/A',
+    gstin: 'N/A',
+    state: 'N/A',
+    stateCode: 'N/A',
+    contact: 'N/A',
+    email: 'N/A',
+    pan: 'N/A',
+    logo: ''
+  };
+  
+  const buyer = invoice.buyer || {
+    name: 'N/A',
+    address: 'N/A',
+    gstin: 'N/A',
+    state: 'N/A',
+    stateCode: 'N/A',
+    contact: 'N/A',
+    email: 'N/A',
+    pan: 'N/A'
+  };
   
   // Check if we're using IGST or CGST+SGST based on the rates
   const useIGST = invoice.igstRate > 0;
@@ -193,16 +213,16 @@ const InvoiceDetail = () => {
               </div>
             )}
             <div>
-              <h2 className="text-lg font-bold">{seller.name || 'Seller'}</h2>
-              <p className="whitespace-pre-line text-sm"><strong>Address:</strong> {seller.address || 'N/A'}</p>
+              <h2 className="text-lg font-bold">{seller.name}</h2>
+              <p className="whitespace-pre-line text-sm"><strong>Address:</strong> {seller.address}</p>
               
               <div className="grid grid-cols-2 text-sm gap-1 mt-1">
-                <p><strong>GSTIN:</strong> {seller.gstin || 'N/A'}</p>
-                <p><strong>State Name:</strong> {seller.state || 'N/A'}</p>
-                <p><strong>Code:</strong> {seller.stateCode || 'N/A'}</p>
-                <p><strong>Contact:</strong> {seller.contact || 'N/A'}</p>
-                <p><strong>Email:</strong> {seller.email || 'N/A'}</p>
-                <p><strong>PAN:</strong> {seller.pan || 'N/A'}</p>
+                <p><strong>GSTIN:</strong> {seller.gstin}</p>
+                <p><strong>State Name:</strong> {seller.state}</p>
+                <p><strong>Code:</strong> {seller.stateCode}</p>
+                <p><strong>Contact:</strong> {seller.contact}</p>
+                <p><strong>Email:</strong> {seller.email}</p>
+                <p><strong>PAN:</strong> {seller.pan}</p>
               </div>
             </div>
           </div>
@@ -250,14 +270,14 @@ const InvoiceDetail = () => {
         <div className="grid grid-cols-12 border-b">
           <div className="col-span-7 p-2 border-r">
             <h3 className="font-bold mb-1">Buyer (Bill To):</h3>
-            <p className="font-medium mb-1">{buyer.name || 'N/A'}</p>
-            <p className="text-sm mb-1"><strong>Address:</strong> {buyer.address || 'N/A'}</p>
+            <p className="font-medium mb-1">{buyer.name}</p>
+            <p className="text-sm mb-1"><strong>Address:</strong> {buyer.address}</p>
             
             <div className="grid grid-cols-2 text-sm gap-1">
-              <p><strong>GSTIN:</strong> {buyer.gstin || 'N/A'}</p>
-              <p><strong>State:</strong> {buyer.state || 'N/A'}</p>
-              <p><strong>Code:</strong> {buyer.stateCode || 'N/A'}</p>
-              <p><strong>Place of supply:</strong> {buyer.state || 'N/A'}</p>
+              <p><strong>GSTIN:</strong> {buyer.gstin}</p>
+              <p><strong>State:</strong> {buyer.state}</p>
+              <p><strong>Code:</strong> {buyer.stateCode}</p>
+              <p><strong>Place of supply:</strong> {buyer.state}</p>
             </div>
           </div>
           
@@ -499,7 +519,7 @@ const InvoiceDetail = () => {
           </div>
           
           <div className="col-span-5 p-2 text-right">
-            <p className="mb-2">for {seller.name || 'Company'}</p>
+            <p className="mb-2">for {seller.name}</p>
             <div className="h-16"></div>
             <p className="mt-2">Authorized Signatory</p>
           </div>
