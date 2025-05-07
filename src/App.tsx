@@ -56,7 +56,7 @@ const App = () => (
                     <Route index element={<InvoiceList />} />
                     <Route path="new" element={<InvoiceCreate />} />
                     <Route path=":id" element={<InvoiceDetail />} />
-                    <Route path="edit/:id" element={<InvoiceCreate />} />
+                    <Route path="edit/:id" element={<InvoiceCreate isEditMode={true} />} />
                   </Route>
                   
                   <Route path="customers">

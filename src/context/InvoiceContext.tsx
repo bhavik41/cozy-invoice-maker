@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Invoice, InvoiceFilter } from '@/types';
 import { toast } from 'sonner';
@@ -56,6 +55,12 @@ export const InvoiceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       // Add company ID
       const invoiceWithCompany = addCompanyId(invoice);
+      
+      // Check if this is an update operation (if invoice has an id)
+      if (invoice.id && allInvoices.some(i => i.id === invoice.id)) {
+        // If the invoice exists, update it instead of adding
+        return updateInvoice(invoice);
+      }
       
       // Add to storage
       await storage.addItem('invoices', invoiceWithCompany);

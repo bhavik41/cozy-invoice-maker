@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
@@ -82,6 +81,15 @@ const printStyles = `
     }
     #invoice-to-print .company-name {
       font-size: 14px !important;
+    }
+    #invoice-to-print .logo-container {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+    }
+    #invoice-to-print .logo-container img {
+      height: 60px;
+      max-width: 150px;
     }
   }
 `;
@@ -208,11 +216,9 @@ const InvoiceDetail = () => {
         </Button>
         
         <div className="flex gap-2 no-print">
-          <Button variant="outline" asChild>
-            <Link to={`/invoices/edit/${invoice.id}`}>
-              <Edit2 className="h-4 w-4 mr-2" />
-              Edit
-            </Link>
+          <Button variant="outline" onClick={() => navigate(`/invoices/edit/${invoice.id}`)}>
+            <Edit2 className="h-4 w-4 mr-2" />
+            Edit
           </Button>
           <Button variant="outline" onClick={handlePrint}>
             <Printer className="h-4 w-4 mr-2" />
@@ -243,20 +249,20 @@ const InvoiceDetail = () => {
       
       <Card className="p-2 mb-6 border" id="invoice-to-print" ref={invoiceRef}>
         <div className="text-center border-b pb-2 mb-2">
+          {seller.logo && (
+            <div className="logo-container">
+              <img 
+                src={seller.logo} 
+                alt="Company Logo" 
+                className="h-16 w-auto object-contain"
+              />
+            </div>
+          )}
           <h1 className="text-2xl font-bold invoice-heading">Tax Invoice</h1>
         </div>
         
         <div className="grid grid-cols-12 border-b">
           <div className="col-span-7 p-2 border-r flex seller-details">
-            {seller.logo && (
-              <div className="mr-4 flex-shrink-0">
-                <img 
-                  src={seller.logo} 
-                  alt="Company Logo" 
-                  className="h-16 w-auto object-contain"
-                />
-              </div>
-            )}
             <div>
               <h2 className="text-lg font-bold company-name">{seller.name}</h2>
               <p className="whitespace-pre-line text-sm"><strong>Address:</strong> {seller.address}</p>
