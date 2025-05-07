@@ -27,8 +27,18 @@ export const InvoiceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Load invoices on mount
   useEffect(() => {
     const loadInvoices = async () => {
-      const loadedInvoices = await storage.getItems<Invoice>('invoices');
-      setAllInvoices(loadedInvoices);
+      try {
+        const loadedInvoices = await storage.getItems<Invoice>('invoices');
+        if (Array.isArray(loadedInvoices)) {
+          setAllInvoices(loadedInvoices);
+        } else {
+          console.error('Loaded invoices is not an array:', loadedInvoices);
+          setAllInvoices([]);
+        }
+      } catch (error) {
+        console.error('Error loading invoices:', error);
+        setAllInvoices([]);
+      }
     };
     
     loadInvoices();
@@ -104,8 +114,14 @@ export const InvoiceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Get an invoice by ID
   const getInvoice = (id: string): Invoice | undefined => {
-    // First check filtered invoices (which respect company isolation)
-    return invoices.find(i => i.id === id);
+    try {
+      // First check filtered invoices (which respect company isolation)
+      const invoice = invoices.find(i => i.id === id);
+      return invoice;
+    } catch (error) {
+      console.error('Error getting invoice:', error);
+      return undefined;
+    }
   };
 
   // Generate next invoice number
