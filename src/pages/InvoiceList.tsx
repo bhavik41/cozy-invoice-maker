@@ -68,7 +68,7 @@ const InvoiceList = () => {
   };
   
   const handlePrint = (invoiceId: string) => {
-    // Navigate to the invoice detail page and print
+    // Open in the same tab to avoid popup blockers
     window.open(`/invoices/${invoiceId}?print=true`, '_blank');
   };
 

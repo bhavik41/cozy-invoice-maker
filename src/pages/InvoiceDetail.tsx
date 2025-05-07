@@ -1,6 +1,6 @@
 
-import React, { useState, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from 'react';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -22,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-// CSS for the invoice print
+// CSS for the invoice print - updated to ensure it fits on one page
 const printStyles = `
   @media print {
     body * {
@@ -47,6 +47,27 @@ const printStyles = `
     #invoice-to-print th, #invoice-to-print td {
       border: 1px solid black;
       padding: 4px;
+      font-size: 12px;
+    }
+    #invoice-to-print {
+      font-size: 12px;
+    }
+    @page {
+      size: A4;
+      margin: 10mm;
+    }
+    #invoice-to-print h1 {
+      font-size: 18px;
+    }
+    #invoice-to-print h2, #invoice-to-print h3 {
+      font-size: 14px;
+    }
+    #invoice-to-print .grid {
+      display: block;
+    }
+    #invoice-to-print .col-span-7, #invoice-to-print .col-span-5 {
+      width: 100%;
+      display: block;
     }
   }
 `;
@@ -54,11 +75,21 @@ const printStyles = `
 const InvoiceDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { getInvoice, deleteInvoice } = useAppContext();
   const invoiceRef = useRef<HTMLDivElement>(null);
   
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const invoice = id ? getInvoice(id) : null;
+  
+  // Check if we're in print mode (from URL)
+  useEffect(() => {
+    if (location.search.includes('print=true')) {
+      setTimeout(() => {
+        printInvoice();
+      }, 500); // Short delay to ensure rendering is complete
+    }
+  }, [location]);
   
   const confirmDelete = () => {
     if (id) {
@@ -156,7 +187,7 @@ const InvoiceDetail = () => {
     <div className="max-w-5xl mx-auto">
       <style>{printStyles}</style>
       
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 no-print">
         <Button variant="ghost" onClick={() => navigate('/invoices')} className="no-print">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Invoices
@@ -343,8 +374,8 @@ const InvoiceDetail = () => {
                 </tr>
               ))}
               
-              {/* Empty rows to match template */}
-              {Array(Math.max(0, 5 - (invoice.items || []).length)).fill(0).map((_, i) => (
+              {/* Empty rows to match template - reduced for one-page print */}
+              {Array(Math.max(0, 2 - (invoice.items || []).length)).fill(0).map((_, i) => (
                 <tr key={`empty-${i}`}>
                   <td className="border p-1">&nbsp;</td>
                   <td className="border p-1">&nbsp;</td>
@@ -392,8 +423,8 @@ const InvoiceDetail = () => {
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan={6} className="border p-2 text-right font-bold">Total</td>
-                <td className="border p-2 text-right font-bold">{formatCurrency(invoice.totalAmount || 0).replace('₹', '')}</td>
+                <td colSpan={6} className="border p-1 text-right font-bold">Total</td>
+                <td className="border p-1 text-right font-bold">{formatCurrency(invoice.totalAmount || 0).replace('₹', '')}</td>
               </tr>
             </tfoot>
           </table>
@@ -509,7 +540,7 @@ const InvoiceDetail = () => {
               <p><strong>IFS Code:</strong> {bankDetails.ifscCode || 'N/A'}</p>
             </div>
             
-            <div className="mt-4">
+            <div className="mt-2">
               <p className="font-bold mb-1">Declaration</p>
               <p className="text-sm">
                 We declare that this invoice shows the actual price of the goods described 
@@ -520,7 +551,7 @@ const InvoiceDetail = () => {
           
           <div className="col-span-5 p-2 text-right">
             <p className="mb-2">for {seller.name}</p>
-            <div className="h-16"></div>
+            <div className="h-12"></div>
             <p className="mt-2">Authorized Signatory</p>
           </div>
         </div>

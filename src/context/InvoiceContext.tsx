@@ -85,6 +85,8 @@ export const InvoiceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         companyId
       } as Invoice & { companyId: string };
       
+      console.log("Updating invoice:", updatedInvoice);
+      
       // Update in storage
       await storage.updateItem('invoices', updatedInvoice);
       
