@@ -40,10 +40,21 @@ const InvoiceList = () => {
     });
     
     const processed = filtered.map(invoice => {
-      const buyerData = getCustomer(invoice.buyerId);
+      // Get customer name from different sources based on if it's a one-time customer
+      let buyerName = 'Unknown';
+      
+      if (invoice.useExistingBuyer) {
+        // For existing customers
+        const buyerData = getCustomer(invoice.buyerId || '');
+        buyerName = invoice.buyer?.name || buyerData?.name || 'Unknown';
+      } else {
+        // For one-time customers
+        buyerName = invoice.buyerName || 'One-time Customer';
+      }
+      
       return {
         ...invoice,
-        buyerName: invoice.buyer?.name || buyerData?.name || 'Unknown'
+        buyerName
       };
     });
     

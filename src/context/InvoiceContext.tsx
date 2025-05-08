@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Invoice, InvoiceFilter } from '@/types';
 import { toast } from 'sonner';
@@ -128,25 +129,27 @@ export const InvoiceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // First check filtered invoices (which respect company isolation)
       const invoice = invoices.find(i => i.id === id);
       
-      // Make sure seller and buyer are defined objects to prevent "Cannot read properties of undefined" errors
-      if (invoice) {
-        // Ensure seller is defined
-        if (!invoice.seller) {
-          console.warn(`Invoice ${id} has no seller data, providing default empty object`);
-          invoice.seller = {
-            id: '',
-            name: 'N/A',
-            address: 'N/A',
-            gstin: 'N/A',
-            state: 'N/A',
-            stateCode: 'N/A',
-            contact: 'N/A',
-            email: 'N/A',
-            pan: 'N/A'
-          };
-        }
-        
-        // Ensure buyer is defined
+      if (!invoice) return undefined;
+      
+      // Make sure seller is defined
+      if (!invoice.seller) {
+        console.warn(`Invoice ${id} has no seller data, providing default empty object`);
+        invoice.seller = {
+          id: '',
+          name: 'N/A',
+          address: 'N/A',
+          gstin: 'N/A',
+          state: 'N/A',
+          stateCode: 'N/A',
+          contact: 'N/A',
+          email: 'N/A',
+          pan: 'N/A'
+        };
+      }
+      
+      // Handle buyer data differently based on whether it's a one-time customer
+      if (invoice.useExistingBuyer) {
+        // For existing customers, ensure buyer is defined
         if (!invoice.buyer) {
           console.warn(`Invoice ${id} has no buyer data, providing default empty object`);
           invoice.buyer = {
@@ -161,6 +164,20 @@ export const InvoiceProvider: React.FC<{ children: React.ReactNode }> = ({ child
             pan: 'N/A'
           };
         }
+      } else {
+        // For one-time customers, create a buyer object from invoice fields
+        // This ensures the buyer data is available in the same format regardless of customer type
+        invoice.buyer = {
+          id: 'one-time',
+          name: invoice.buyerName || 'N/A',
+          address: invoice.buyerAddress || 'N/A',
+          gstin: invoice.buyerGstin || 'N/A',
+          state: invoice.buyerState || 'N/A',
+          stateCode: invoice.buyerStateCode || 'N/A',
+          contact: invoice.buyerContact || 'N/A',
+          email: invoice.buyerEmail || 'N/A',
+          pan: invoice.buyerPan || 'N/A'
+        };
       }
       
       return invoice;

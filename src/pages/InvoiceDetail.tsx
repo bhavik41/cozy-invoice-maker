@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
@@ -159,7 +160,28 @@ const InvoiceDetail = () => {
     );
   }
 
-  // Ensure seller and buyer objects exist with default values if needed
+  // Create a buyer object with either existing buyer data or from direct invoice fields for one-time customers
+  const buyer = invoice.useExistingBuyer ? (invoice.buyer || {
+    name: 'N/A',
+    address: 'N/A',
+    gstin: 'N/A',
+    state: 'N/A',
+    stateCode: 'N/A',
+    contact: 'N/A',
+    email: 'N/A',
+    pan: 'N/A'
+  }) : {
+    name: invoice.buyerName || 'N/A',
+    address: invoice.buyerAddress || 'N/A',
+    gstin: invoice.buyerGstin || 'N/A',
+    state: invoice.buyerState || 'N/A',
+    stateCode: invoice.buyerStateCode || 'N/A',
+    contact: invoice.buyerContact || 'N/A',
+    email: invoice.buyerEmail || 'N/A',
+    pan: invoice.buyerPan || 'N/A'
+  };
+  
+  // Ensure seller object exists with default values if needed
   const seller = invoice.seller || {
     name: 'N/A',
     address: 'N/A',
@@ -170,17 +192,6 @@ const InvoiceDetail = () => {
     email: 'N/A',
     pan: 'N/A',
     logo: ''
-  };
-  
-  const buyer = invoice.buyer || {
-    name: 'N/A',
-    address: 'N/A',
-    gstin: 'N/A',
-    state: 'N/A',
-    stateCode: 'N/A',
-    contact: 'N/A',
-    email: 'N/A',
-    pan: 'N/A'
   };
   
   // Check if we're using IGST or CGST+SGST based on the rates
