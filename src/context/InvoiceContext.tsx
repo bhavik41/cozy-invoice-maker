@@ -88,6 +88,9 @@ export const InvoiceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       // Ensure invoice has the same companyId as before
       const companyId = (existingInvoice as any)?.companyId || 'company-1';
+      
+      // Preserve one-time customer data if the updated invoice still uses a one-time customer
+      // or if we're switching from an existing customer to a one-time customer
       const updatedInvoice = {
         ...invoice,
         companyId

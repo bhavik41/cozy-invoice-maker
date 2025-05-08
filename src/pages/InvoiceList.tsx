@@ -43,10 +43,10 @@ const InvoiceList = () => {
       // Get customer name from different sources based on if it's a one-time customer
       let buyerName = 'Unknown';
       
-      if (invoice.useExistingBuyer) {
+      if (invoice.useExistingBuyer && invoice.buyerId) {
         // For existing customers
-        const buyerData = getCustomer(invoice.buyerId || '');
-        buyerName = invoice.buyer?.name || buyerData?.name || 'Unknown';
+        const buyerData = getCustomer(invoice.buyerId);
+        buyerName = buyerData?.name || 'Unknown Customer';
       } else {
         // For one-time customers
         buyerName = invoice.buyerName || 'One-time Customer';
