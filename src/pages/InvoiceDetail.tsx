@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
@@ -178,7 +177,7 @@ const InvoiceDetail = () => {
     stateCode: invoice.buyerStateCode || 'N/A',
     contact: invoice.buyerContact || 'N/A',
     email: invoice.buyerEmail || 'N/A',
-    pan: invoice.buyerPan || 'N/A'
+    pan: 'N/A'
   };
   
   // Ensure seller object exists with default values if needed
@@ -339,7 +338,6 @@ const InvoiceDetail = () => {
               <p><strong>GSTIN:</strong> {buyer.gstin}</p>
               <p><strong>State:</strong> {buyer.state}</p>
               <p><strong>Code:</strong> {buyer.stateCode}</p>
-              <p><strong>Place of supply:</strong> {buyer.state}</p>
             </div>
           </div>
           
