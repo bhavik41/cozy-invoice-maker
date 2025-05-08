@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -40,6 +41,10 @@ import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 
+interface InvoiceCreateProps {
+  isEditMode?: boolean;
+}
+
 const InvoiceFormSchema = z.object({
   invoiceNumber: z.string().min(1, { message: 'Invoice number is required' }),
   date: z.date({ required_error: 'Date is required' }),
@@ -72,9 +77,10 @@ const InvoiceFormSchema = z.object({
 
 type InvoiceFormValues = z.infer<typeof InvoiceFormSchema>;
 
-const InvoiceCreate = () => {
+const InvoiceCreate: React.FC<InvoiceCreateProps> = ({ isEditMode = false }) => {
   const navigate = useNavigate();
-  const { customers, products, addInvoice, currentSeller, getNextInvoiceNumber, getProduct, getCustomer } = useAppContext();
+  const { id } = useParams<{ id: string }>();
+  const { customers, products, addInvoice, currentSeller, getNextInvoiceNumber, getProduct, getCustomer, getInvoice } = useAppContext();
   const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
   const [totalAmount, setTotalAmount] = useState(0);
   const [totalTaxAmount, setTotalTaxAmount] = useState(0);
@@ -84,6 +90,7 @@ const InvoiceCreate = () => {
   const [selectedBuyerId, setSelectedBuyerId] = useState<string>('');
   const [buyerType, setBuyerType] = useState<'existing' | 'new'>('existing');
   const [useExistingBuyer, setUseExistingBuyer] = useState(true);
+  const [invoiceId, setInvoiceId] = useState<string | undefined>(undefined);
 
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(InvoiceFormSchema),
@@ -116,6 +123,63 @@ const InvoiceCreate = () => {
       placeOfSupply: '',
     },
   });
+
+  // Load invoice data if in edit mode
+  useEffect(() => {
+    if (isEditMode && id) {
+      const invoice = getInvoice(id);
+      if (invoice) {
+        setInvoiceId(invoice.id);
+        
+        // Basic invoice fields
+        form.setValue('invoiceNumber', invoice.invoiceNumber);
+        form.setValue('date', new Date(invoice.date));
+        form.setValue('eWayBillNumber', invoice.eWayBillNumber || '');
+        form.setValue('deliveryNote', invoice.deliveryNote || '');
+        form.setValue('modeOfPayment', invoice.modeOfPayment || '');
+        form.setValue('reference', invoice.reference || '');
+        form.setValue('otherReferences', invoice.otherReferences || '');
+        form.setValue('buyerOrderNo', invoice.buyerOrderNo || '');
+        form.setValue('dated', invoice.dated || '');
+        form.setValue('dispatchDocumentNo', invoice.dispatchDocumentNo || '');
+        form.setValue('deliveryNoteDate', invoice.deliveryNoteDate || '');
+        form.setValue('dispatchedThrough', invoice.dispatchedThrough || '');
+        form.setValue('destination', invoice.destination || '');
+        form.setValue('billOfLading', invoice.billOfLading || '');
+        form.setValue('motorVehicleNo', invoice.motorVehicleNo || '');
+        form.setValue('termsOfDelivery', invoice.termsOfDelivery || '');
+        
+        // Customer/buyer information
+        if (invoice.buyer && invoice.buyer.id) {
+          setUseExistingBuyer(true);
+          setBuyerType('existing');
+          setSelectedBuyerId(invoice.buyer.id);
+          form.setValue('buyerId', invoice.buyer.id);
+        } else {
+          setUseExistingBuyer(false);
+          setBuyerType('new');
+          form.setValue('buyerName', invoice.buyerName || '');
+          form.setValue('buyerAddress', invoice.buyerAddress || '');
+          form.setValue('buyerGstin', invoice.buyerGstin || '');
+          form.setValue('buyerState', invoice.buyerState || '');
+          form.setValue('buyerStateCode', invoice.buyerStateCode || '');
+          form.setValue('buyerContact', invoice.buyerContact || '');
+          form.setValue('buyerEmail', invoice.buyerEmail || '');
+          form.setValue('buyerPan', invoice.buyerPan || '');
+          form.setValue('placeOfSupply', invoice.placeOfSupply || '');
+        }
+        
+        // Load invoice items
+        if (invoice.items && Array.isArray(invoice.items)) {
+          setInvoiceItems(invoice.items);
+          recalculateTaxes(invoice.items, invoice.buyer?.id || '');
+        }
+      } else {
+        toast.error('Invoice not found');
+        navigate('/invoices');
+      }
+    }
+  }, [isEditMode, id, getInvoice]);
 
   const toggleBuyerType = (useExisting: boolean) => {
     setUseExistingBuyer(useExisting);
@@ -314,7 +378,7 @@ const InvoiceCreate = () => {
     const totalTaxAmountInWords = `${totalTaxAmount} Rupees Only`;
 
     const newInvoice = {
-      id: uuidv4(),
+      id: isEditMode && invoiceId ? invoiceId : uuidv4(),
       invoiceNumber: values.invoiceNumber,
       eWayBillNumber: values.eWayBillNumber || '',
       date: values.date,
@@ -368,17 +432,17 @@ const InvoiceCreate = () => {
         ifscCode: currentSeller.bankDetails?.ifscCode || '',
       },
       
-      createdAt: new Date(),
+      createdAt: isEditMode ? new Date() : new Date(),
       updatedAt: new Date(),
     };
 
     try {
       addInvoice(newInvoice);
-      toast.success('Invoice created successfully!');
+      toast.success(isEditMode ? 'Invoice updated successfully!' : 'Invoice created successfully!');
       navigate('/invoices');
     } catch (error) {
-      console.error('Error creating invoice:', error);
-      toast.error('Failed to create invoice. Please try again.');
+      console.error('Error creating/updating invoice:', error);
+      toast.error(`Failed to ${isEditMode ? 'update' : 'create'} invoice. Please try again.`);
     }
   };
 
@@ -389,12 +453,12 @@ const InvoiceCreate = () => {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
-        <h2 className="text-2xl font-semibold">Create New Invoice</h2>
+        <h2 className="text-2xl font-semibold">{isEditMode ? 'Edit Invoice' : 'Create New Invoice'}</h2>
       </div>
       
       <Card>
         <CardHeader>
-          <CardTitle>Invoice Details</CardTitle>
+          <CardTitle>{isEditMode ? 'Edit Invoice' : 'Invoice Details'}</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -1031,7 +1095,7 @@ const InvoiceCreate = () => {
                   Cancel
                 </Button>
                 <Button type="submit">
-                  Create Invoice
+                  {isEditMode ? 'Update Invoice' : 'Create Invoice'}
                 </Button>
               </div>
             </form>
