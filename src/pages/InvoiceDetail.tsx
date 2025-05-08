@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
@@ -21,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-// CSS for the invoice print - updated to ensure it fits on one page
+// CSS for the invoice print - updated to match the provided format
 const printStyles = `
   @media print {
     body * {
@@ -83,9 +84,8 @@ const printStyles = `
       font-size: 14px !important;
     }
     #invoice-to-print .logo-container {
-      position: absolute;
-      top: 10px;
-      left: 10px;
+      text-align: center;
+      margin-bottom: 5px;
     }
     #invoice-to-print .logo-container img {
       height: 60px;
@@ -258,37 +258,39 @@ const InvoiceDetail = () => {
       </div>
       
       <Card className="p-2 mb-6 border" id="invoice-to-print" ref={invoiceRef}>
+        {/* Header with centered Tax Invoice title */}
         <div className="text-center border-b pb-2 mb-2">
-          {seller.logo && (
-            <div className="logo-container">
-              <img 
-                src={seller.logo} 
-                alt="Company Logo" 
-                className="h-16 w-auto object-contain"
-              />
-            </div>
-          )}
           <h1 className="text-2xl font-bold invoice-heading">Tax Invoice</h1>
         </div>
         
+        {/* Seller and Invoice Details */}
         <div className="grid grid-cols-12 border-b">
-          <div className="col-span-7 p-2 border-r flex seller-details">
-            <div>
-              <h2 className="text-lg font-bold company-name">{seller.name}</h2>
-              <p className="whitespace-pre-line text-sm"><strong>Address:</strong> {seller.address}</p>
-              
-              <div className="grid grid-cols-2 text-sm gap-1 mt-1">
-                <p><strong>GSTIN:</strong> {seller.gstin}</p>
-                <p><strong>State Name:</strong> {seller.state}</p>
-                <p><strong>Code:</strong> {seller.stateCode}</p>
-                <p><strong>Contact:</strong> {seller.contact}</p>
-                <p><strong>Email:</strong> {seller.email}</p>
-                <p><strong>PAN:</strong> {seller.pan}</p>
+          {/* Left column - Seller details */}
+          <div className="col-span-6 p-2 border-r seller-details">
+            {/* Centered logo in its own row */}
+            {seller.logo && (
+              <div className="logo-container">
+                <img 
+                  src={seller.logo} 
+                  alt="Company Logo" 
+                  className="h-16 w-auto object-contain mx-auto"
+                />
               </div>
+            )}
+            <h2 className="text-lg font-bold company-name">{seller.name}</h2>
+            <p className="whitespace-pre-line text-sm"><strong>Address:</strong> {seller.address}</p>
+            
+            <div className="text-sm mt-1">
+              <p><strong>GSTIN:</strong> {seller.gstin}</p>
+              <p><strong>State Name:</strong> {seller.state} <strong>Code:</strong> {seller.stateCode}</p>
+              <p><strong>Contact:</strong> {seller.contact}</p>
+              <p><strong>Email:</strong> {seller.email}</p>
+              <p><strong>PAN:</strong> {seller.pan}</p>
             </div>
           </div>
           
-          <div className="col-span-5 p-2">
+          {/* Right column - Invoice details */}
+          <div className="col-span-6 p-2">
             <table className="w-full text-sm border-collapse">
               <tbody>
                 <tr className="border-b">
@@ -328,20 +330,22 @@ const InvoiceDetail = () => {
           </div>
         </div>
         
+        {/* Buyer and Shipping Details */}
         <div className="grid grid-cols-12 border-b">
-          <div className="col-span-7 p-2 border-r buyer-details">
+          {/* Left column - Buyer details */}
+          <div className="col-span-6 p-2 border-r buyer-details">
             <h3 className="font-bold mb-1">Buyer (Bill To):</h3>
             <p className="font-medium mb-1">{buyer.name}</p>
             <p className="text-sm mb-1"><strong>Address:</strong> {buyer.address}</p>
             
-            <div className="grid grid-cols-2 text-sm gap-1">
+            <div className="text-sm">
               <p><strong>GSTIN:</strong> {buyer.gstin}</p>
-              <p><strong>State:</strong> {buyer.state}</p>
-              <p><strong>Code:</strong> {buyer.stateCode}</p>
+              <p><strong>State:</strong> {buyer.state} <strong>Code:</strong> {buyer.stateCode}</p>
             </div>
           </div>
           
-          <div className="col-span-5 p-2">
+          {/* Right column - Shipping details */}
+          <div className="col-span-6 p-2">
             <table className="w-full text-sm border-collapse">
               <tbody>
                 <tr className="border-b">
@@ -377,6 +381,7 @@ const InvoiceDetail = () => {
           </div>
         </div>
         
+        {/* Invoice Items Table */}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
@@ -403,39 +408,38 @@ const InvoiceDetail = () => {
                 </tr>
               ))}
               
+              {/* Subtotal row */}
               <tr>
                 <td colSpan={6} className="border p-1 text-right font-medium">Total</td>
                 <td className="border p-1 text-right font-bold">{formatCurrency((invoice.totalAmount || 0) - (invoice.totalTaxAmount || 0)).replace('₹', '')}</td>
               </tr>
               
               {/* Tax calculations */}
-              {useIGST ? (
-                <tr>
-                  <td colSpan={3} className="border p-1 text-center">
+              <tr>
+                <td colSpan={3} className="border p-1">
+                  {useIGST ? (
+                    <p className="text-center">IGST @ {invoice.igstRate || 0}%</p>
+                  ) : (
+                    <>
+                      <p className="text-center">CGST @ {invoice.cgstRate || 0}%</p>
+                      <p className="text-center">SGST @ {invoice.sgstRate || 0}%</p>
+                    </>
+                  )}
+                  <p className="text-center">Round Off</p>
+                </td>
+                <td colSpan={3} className="border p-1 text-right">
+                  {useIGST ? (
                     <p>IGST @ {invoice.igstRate || 0}%</p>
-                    <p>Round Off</p>
-                  </td>
-                  <td colSpan={3} className="border p-1 align-top text-right">
-                    <p>IGST @ {invoice.igstRate || 0}%</p>
-                    <p>Round Off</p>
-                  </td>
-                  <td className="border p-1 text-right">{formatCurrency(invoice.totalTaxAmount || 0).replace('₹', '')}</td>
-                </tr>
-              ) : (
-                <tr>
-                  <td colSpan={3} className="border p-1 text-center">
-                    <p>CGST @ {invoice.cgstRate || 0}%</p>
-                    <p>SGST @ {invoice.sgstRate || 0}%</p>
-                    <p>Round Off</p>
-                  </td>
-                  <td colSpan={3} className="border p-1 text-right">
-                    <p>CGST @ {invoice.cgstRate || 0}%</p>
-                    <p>SGST @ {invoice.sgstRate || 0}%</p>
-                    <p>Round Off</p>
-                  </td>
-                  <td className="border p-1 text-right">{formatCurrency(invoice.totalTaxAmount || 0).replace('₹', '')}</td>
-                </tr>
-              )}
+                  ) : (
+                    <>
+                      <p>CGST @ {invoice.cgstRate || 0}%</p>
+                      <p>SGST @ {invoice.sgstRate || 0}%</p>
+                    </>
+                  )}
+                  <p>Round Off</p>
+                </td>
+                <td className="border p-1 text-right">{formatCurrency(invoice.totalTaxAmount || 0).replace('₹', '')}</td>
+              </tr>
             </tbody>
             <tfoot>
               <tr>
@@ -446,11 +450,13 @@ const InvoiceDetail = () => {
           </table>
         </div>
         
+        {/* Amount in Words */}
         <div className="border-t p-1">
           <p className="font-medium">Amount Chargeable (In words)</p>
           <p className="font-bold">Rupees {invoice.totalAmountInWords || 'N/A'} Only</p>
         </div>
         
+        {/* Tax Summary Table */}
         <div className="overflow-x-auto border-t">
           <table className="w-full border-collapse tax-summary-table">
             <thead>
@@ -517,6 +523,7 @@ const InvoiceDetail = () => {
                 );
               })}
               
+              {/* Tax summary total row */}
               <tr>
                 <td className="border p-1 text-right font-bold">Total</td>
                 <td className="border p-1 text-right font-bold">{formatCurrency((invoice.totalAmount || 0) - (invoice.totalTaxAmount || 0)).replace('₹', '')}</td>
@@ -541,11 +548,13 @@ const InvoiceDetail = () => {
           </table>
         </div>
         
+        {/* Tax Amount in Words */}
         <div className="border-t p-1">
           <p className="font-medium">Tax Amount (In words)</p>
           <p className="font-bold">Rupees {invoice.totalTaxAmountInWords || 'N/A'} Only</p>
         </div>
         
+        {/* Bank Details and Declaration */}
         <div className="grid grid-cols-12 mt-2 border-t">
           <div className="col-span-7 p-2">
             <div className="text-sm">
