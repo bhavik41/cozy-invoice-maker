@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Card } from '@/components/ui/card';
@@ -5,9 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Download, Upload, Database, RefreshCw, HardDrive, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { handleFileUpload } from '@/utils/helpers';
-
-// Check if we're running in Electron
-const isElectron = window.api !== undefined;
 
 const Backup = () => {
   const { exportData, importData, products, customers, invoices } = useAppContext();
@@ -62,11 +60,9 @@ const Backup = () => {
           <div className="p-3 rounded-full bg-green-100 self-start mb-3">
             <RefreshCw className="h-6 w-6 text-green-600" />
           </div>
-          <h3 className="text-lg font-medium mb-1">{isElectron ? 'SQLite Database' : 'Auto Backup'}</h3>
+          <h3 className="text-lg font-medium mb-1">Auto Backup</h3>
           <p className="text-sm text-gray-500 mb-2">
-            {isElectron 
-              ? 'Data is stored in a local SQLite database on your computer.' 
-              : 'Data is automatically backed up to your device as you make changes.'}
+            Data is automatically backed up to your device as you make changes.
           </p>
           <div className="mt-auto pt-3">
             <p className="text-xs text-gray-400">
@@ -81,15 +77,11 @@ const Backup = () => {
           </div>
           <h3 className="text-lg font-medium mb-1">Data Security</h3>
           <p className="text-sm text-gray-500 mb-2">
-            {isElectron 
-              ? 'All data is stored locally in a SQLite database on your computer. Make regular backups to prevent data loss.' 
-              : 'All data is stored locally on your device. Make regular backups to prevent data loss.'}
+            All data is stored locally on your device. Make regular backups to prevent data loss.
           </p>
           <div className="mt-auto pt-3">
             <p className="text-xs text-gray-400">
-              {isElectron 
-                ? 'Desktop app with local database. No data sent to external servers.' 
-                : 'Offline operation. No data sent to external servers.'}
+              Offline operation. No data sent to external servers.
             </p>
           </div>
         </Card>
@@ -143,16 +135,12 @@ const Backup = () => {
                 <HardDrive className="h-5 w-5 text-gray-600" />
               </div>
               <div className="flex-1">
-                <h4 className="font-medium mb-1">{isElectron ? 'SQLite Storage' : 'Local Storage'}</h4>
+                <h4 className="font-medium mb-1">Local Storage</h4>
                 <p className="text-sm text-gray-500 mb-3">
-                  {isElectron 
-                    ? 'All your data is saved automatically in a SQLite database on your computer.' 
-                    : 'All your data is saved automatically in your browser\'s local storage.'}
+                  All your data is saved automatically in your browser's local storage.
                 </p>
                 <div className="text-xs text-gray-400">
-                  {isElectron 
-                    ? <p>Note: The database file is located in your application data folder.</p> 
-                    : <p>Note: Clearing browser data will erase your invoice data.</p>}
+                  <p>Note: Clearing browser data will erase your invoice data.</p>
                   <p className="mt-1">Make sure to create regular backups and store them safely.</p>
                 </div>
               </div>
