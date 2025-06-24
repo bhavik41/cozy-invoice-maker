@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -72,7 +71,6 @@ const InvoiceFormSchema = z.object({
   buyerContact: z.string().optional(),
   buyerEmail: z.string().optional(),
   buyerPan: z.string().optional(),
-  placeOfSupply: z.string().optional(),
 });
 
 type InvoiceFormValues = z.infer<typeof InvoiceFormSchema>;
@@ -120,7 +118,6 @@ const InvoiceCreate: React.FC<InvoiceCreateProps> = ({ isEditMode = false }) => 
       buyerContact: '',
       buyerEmail: '',
       buyerPan: '',
-      placeOfSupply: '',
     },
   });
 
@@ -129,6 +126,9 @@ const InvoiceCreate: React.FC<InvoiceCreateProps> = ({ isEditMode = false }) => 
     if (isEditMode && id) {
       const invoice = getInvoice(id);
       if (invoice) {
+        console.log('Loading invoice for edit:', invoice);
+        console.log('Invoice useExistingBuyer:', invoice.useExistingBuyer);
+        
         setInvoiceId(invoice.id);
         
         // Basic invoice fields
@@ -149,15 +149,32 @@ const InvoiceCreate: React.FC<InvoiceCreateProps> = ({ isEditMode = false }) => 
         form.setValue('motorVehicleNo', invoice.motorVehicleNo || '');
         form.setValue('termsOfDelivery', invoice.termsOfDelivery || '');
         
-        // Customer/buyer information
-        if (invoice.buyer && invoice.buyer.id) {
+        // Customer/buyer information - Use the useExistingBuyer field from the invoice
+        if (invoice.useExistingBuyer) {
+          console.log('Setting up existing customer mode');
           setUseExistingBuyer(true);
           setBuyerType('existing');
-          setSelectedBuyerId(invoice.buyer.id);
-          form.setValue('buyerId', invoice.buyer.id);
+          if (invoice.buyerId) {
+            setSelectedBuyerId(invoice.buyerId);
+            form.setValue('buyerId', invoice.buyerId);
+            // Auto-populate buyer fields from existing customer
+            const customer = getCustomer(invoice.buyerId);
+            if (customer) {
+              form.setValue('buyerName', customer.name);
+              form.setValue('buyerAddress', customer.address);
+              form.setValue('buyerGstin', customer.gstin);
+              form.setValue('buyerState', customer.state);
+              form.setValue('buyerStateCode', customer.stateCode);
+              form.setValue('buyerContact', customer.contact);
+              form.setValue('buyerEmail', customer.email || '');
+              form.setValue('buyerPan', customer.pan || '');
+            }
+          }
         } else {
+          console.log('Setting up one-time customer mode');
           setUseExistingBuyer(false);
           setBuyerType('new');
+          // Load one-time customer data
           form.setValue('buyerName', invoice.buyerName || '');
           form.setValue('buyerAddress', invoice.buyerAddress || '');
           form.setValue('buyerGstin', invoice.buyerGstin || '');
@@ -166,13 +183,12 @@ const InvoiceCreate: React.FC<InvoiceCreateProps> = ({ isEditMode = false }) => 
           form.setValue('buyerContact', invoice.buyerContact || '');
           form.setValue('buyerEmail', invoice.buyerEmail || '');
           form.setValue('buyerPan', invoice.buyerPan || '');
-          form.setValue('placeOfSupply', invoice.placeOfSupply || '');
         }
         
         // Load invoice items
         if (invoice.items && Array.isArray(invoice.items)) {
           setInvoiceItems(invoice.items);
-          recalculateTaxes(invoice.items, invoice.buyer?.id || '');
+          recalculateTaxes(invoice.items, invoice.buyerId || '');
         }
       } else {
         toast.error('Invoice not found');
@@ -194,7 +210,6 @@ const InvoiceCreate: React.FC<InvoiceCreateProps> = ({ isEditMode = false }) => 
       form.setValue('buyerContact', '');
       form.setValue('buyerEmail', '');
       form.setValue('buyerPan', '');
-      form.setValue('placeOfSupply', '');
     } else {
       form.setValue('buyerId', '');
       setSelectedBuyerId('');
@@ -215,7 +230,6 @@ const InvoiceCreate: React.FC<InvoiceCreateProps> = ({ isEditMode = false }) => 
       form.setValue('buyerContact', customer.contact);
       form.setValue('buyerEmail', customer.email || '');
       form.setValue('buyerPan', customer.pan || '');
-      form.setValue('placeOfSupply', customer.state);
     }
     
     recalculateTaxes(invoiceItems, buyerId);
@@ -411,7 +425,6 @@ const InvoiceCreate: React.FC<InvoiceCreateProps> = ({ isEditMode = false }) => 
       buyerContact: useExistingBuyer ? buyer?.contact : values.buyerContact,
       buyerEmail: useExistingBuyer ? buyer?.email : values.buyerEmail,
       buyerPan: useExistingBuyer ? buyer?.pan : values.buyerPan,
-      placeOfSupply: useExistingBuyer ? buyer?.state : values.placeOfSupply,
       
       cgstRate,
       sgstRate,
@@ -727,7 +740,7 @@ const InvoiceCreate: React.FC<InvoiceCreateProps> = ({ isEditMode = false }) => 
                           <FormLabel>Customer</FormLabel>
                           <Select
                             onValueChange={(value) => handleBuyerChange(value)}
-                            defaultValue={field.value}
+                            value={field.value}
                           >
                             <FormControl>
                               <SelectTrigger>
@@ -894,20 +907,6 @@ const InvoiceCreate: React.FC<InvoiceCreateProps> = ({ isEditMode = false }) => 
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>PAN</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="placeOfSupply"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Place of Supply</FormLabel>
                             <FormControl>
                               <Input {...field} />
                             </FormControl>
