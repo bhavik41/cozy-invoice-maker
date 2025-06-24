@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Invoice, InvoiceFilter } from '@/types';
 import { toast } from 'sonner';
@@ -44,11 +43,9 @@ export const InvoiceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     loadInvoices();
   }, []);
 
-  // Save invoices when they change (localStorage only)
+  // Save invoices when they change
   useEffect(() => {
-    if (!storage.isElectron) {
-      storage.saveItems('invoices', allInvoices);
-    }
+    storage.saveItems('invoices', allInvoices);
   }, [allInvoices]);
 
   // Add an invoice

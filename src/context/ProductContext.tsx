@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Product, ProductFilter } from '@/types';
 import { toast } from 'sonner';
@@ -33,11 +32,9 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
     loadProducts();
   }, []);
 
-  // Save products when they change (localStorage only)
+  // Save products when they change
   useEffect(() => {
-    if (!storage.isElectron) {
-      storage.saveItems('products', allProducts);
-    }
+    storage.saveItems('products', allProducts);
   }, [allProducts]);
 
   // Add a product

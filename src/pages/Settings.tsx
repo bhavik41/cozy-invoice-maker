@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Card } from '@/components/ui/card';
@@ -11,9 +10,6 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { User, Store, Printer, Database, Building2, Image, X } from 'lucide-react';
 import { Customer } from '@/types';
-
-// Check if we're running in Electron
-const isElectron = window.api !== undefined;
 
 const Settings = () => {
   const { currentSeller, setCurrentSeller } = useAppContext();
@@ -321,14 +317,10 @@ const Settings = () => {
             <div className="space-y-4">
               <div className="p-4 bg-gray-50 rounded-lg">
                 <p className="text-sm mb-2">
-                  {isElectron 
-                    ? 'Your data is stored in a SQLite database on your computer.' 
-                    : 'Your data is stored in your browser\'s local storage.'}
+                  Your data is stored in your browser's local storage.
                 </p>
                 <p className="text-sm text-gray-600">
-                  {isElectron
-                    ? 'Database Location: User data folder/invoice-data.db'
-                    : 'Browser Storage: This website\'s local storage'}
+                  Browser Storage: This website's local storage
                 </p>
               </div>
               

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Customer, CustomerFilter } from '@/types';
 import { toast } from 'sonner';
@@ -41,11 +40,9 @@ export const CustomerProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     loadData();
   }, []);
 
-  // Save customers when they change (localStorage only)
+  // Save customers when they change
   useEffect(() => {
-    if (!storage.isElectron) {
-      storage.saveItems('customers', allCustomers);
-    }
+    storage.saveItems('customers', allCustomers);
   }, [allCustomers]);
 
   // Save current seller when it changes
