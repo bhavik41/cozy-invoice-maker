@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,7 +31,7 @@ const FinancialYear = () => {
   const [archivedYears, setArchivedYears] = useState<string[]>([]);
   const [yearData, setYearData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedExportYear, setSelectedExportYear] = useState<string>('');
+  const [selectedExportYear, setSelectedExportYear] = useState<string>('current');
   const [exportStartMonth, setExportStartMonth] = useState<string>('4'); // April
   const [exportEndMonth, setExportEndMonth] = useState<string>('3'); // March
   const [exportStartYear, setExportStartYear] = useState<string>('');
@@ -164,7 +165,7 @@ const FinancialYear = () => {
 
       let invoicesToExport: any[] = [];
 
-      if (selectedExportYear) {
+      if (selectedExportYear && selectedExportYear !== 'current') {
         // Export from archived year
         const yearData = await storage.getFinancialYearData(selectedExportYear);
         if (yearData && yearData.invoices && Array.isArray(yearData.invoices)) {
@@ -288,7 +289,7 @@ const FinancialYear = () => {
                 <SelectValue placeholder="Current year data" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Current Year Data</SelectItem>
+                <SelectItem value="current">Current Year Data</SelectItem>
                 {archivedYears.map((year) => (
                   <SelectItem key={year} value={year}>
                     {formatFinancialYear(year)}
