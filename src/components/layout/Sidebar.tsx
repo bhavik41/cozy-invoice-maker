@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -13,11 +14,11 @@ import {
   Calendar,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAppContext } from '@/context/AppContext';
+import { useCustomers } from '@/context/CustomerContext';
 
 const Sidebar = () => {
   const location = useLocation();
-  const { currentSeller } = useAppContext();
+  const { currentSeller } = useCustomers();
 
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },

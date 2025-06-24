@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -168,13 +167,15 @@ const FinancialYear = () => {
       if (selectedExportYear) {
         // Export from archived year
         const yearData = await storage.getFinancialYearData(selectedExportYear);
-        if (yearData.invoices) {
+        if (yearData && Array.isArray(yearData.invoices)) {
           invoicesToExport = yearData.invoices;
         }
       } else {
         // Export from current invoices
         const currentInvoices = await storage.getItems('invoices');
-        invoicesToExport = currentInvoices;
+        if (Array.isArray(currentInvoices)) {
+          invoicesToExport = currentInvoices;
+        }
       }
 
       // Filter invoices by date range
