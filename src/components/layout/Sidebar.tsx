@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -11,6 +10,7 @@ import {
   HelpCircle,
   FileBarChart,
   UserCircle,
+  Calendar,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppContext } from '@/context/AppContext';
@@ -25,6 +25,7 @@ const Sidebar = () => {
     { name: 'Customers', path: '/customers', icon: Users },
     { name: 'Products', path: '/products', icon: ShoppingBag },
     { name: 'Reports', path: '/reports', icon: FileBarChart },
+    { name: 'Financial Year', path: '/financial-year', icon: Calendar },
     { name: 'Settings', path: '/settings', icon: Settings },
     { name: 'Backup', path: '/backup', icon: Database },
   ];

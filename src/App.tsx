@@ -29,6 +29,7 @@ import ProductCreate from './pages/ProductCreate';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Backup from './pages/Backup';
+import FinancialYear from './pages/FinancialYear';
 import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient();
@@ -74,6 +75,7 @@ const App = () => (
                   </Route>
                   
                   <Route path="reports" element={<Reports />} />
+                  <Route path="financial-year" element={<FinancialYear />} />
                   <Route path="settings" element={<Settings />} />
                   <Route path="backup" element={<Backup />} />
                 </Route>
