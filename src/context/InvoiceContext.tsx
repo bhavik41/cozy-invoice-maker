@@ -3,6 +3,7 @@ import { Invoice, InvoiceFilter } from '@/types';
 import { toast } from 'sonner';
 import { useBaseData } from './BaseDataContext';
 import * as storage from '@/utils/storage';
+import { getCurrentFinancialYear, isNewFinancialYear } from '@/utils/financialYear';
 
 interface InvoiceContextProps {
   invoices: Invoice[];
@@ -18,6 +19,7 @@ const InvoiceContext = createContext<InvoiceContextProps | undefined>(undefined)
 
 export const InvoiceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [allInvoices, setAllInvoices] = useState<Invoice[]>([]);
+  const [currentFinancialYear, setCurrentFinancialYear] = useState<string>(getCurrentFinancialYear());
   const { filterByCompany, addCompanyId } = useBaseData();
   
   // Filtered invoices based on current user's company
@@ -48,9 +50,35 @@ export const InvoiceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     storage.saveItems('invoices', allInvoices);
   }, [allInvoices]);
 
+  // Check for financial year transition
+  const checkFinancialYearTransition = async () => {
+    const currentFY = getCurrentFinancialYear();
+    if (currentFY !== currentFinancialYear) {
+      try {
+        // Archive previous financial year data
+        await storage.archiveCurrentFinancialYear(currentFinancialYear);
+        
+        // Clear current data for new financial year
+        setAllInvoices([]);
+        await storage.saveItems('invoices', []);
+        
+        // Update current financial year
+        setCurrentFinancialYear(currentFY);
+        
+        toast.success(`New Financial Year ${currentFY} started! Previous year data has been archived.`);
+      } catch (error) {
+        console.error('Error during financial year transition:', error);
+        toast.error('Error during financial year transition. Please contact support.');
+      }
+    }
+  };
+
   // Add an invoice
   const addInvoice = async (invoice: Invoice): Promise<void> => {
     try {
+      // Check for financial year transition before adding invoice
+      await checkFinancialYearTransition();
+      
       // Add company ID
       const invoiceWithCompany = addCompanyId(invoice);
       
@@ -187,7 +215,7 @@ export const InvoiceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  // Generate next invoice number
+  // Generate next invoice number - now resets for new financial year
   const getNextInvoiceNumber = (): string => {
     if (invoices.length === 0) {
       return 'INV-0001';

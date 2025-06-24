@@ -1,4 +1,3 @@
-
 // Utility for interacting with localStorage storage
 
 // Generic getItems function for localStorage
@@ -55,6 +54,65 @@ export const getSetting = async <T>(key: string): Promise<T | null> => {
 // Save a single setting
 export const saveSetting = async <T>(key: string, value: T): Promise<void> => {
   localStorage.setItem(key, JSON.stringify(value));
+};
+
+// Financial Year specific functions
+export const getFinancialYearData = async (year: string): Promise<any[]> => {
+  try {
+    const data = localStorage.getItem(`financialYear_${year}`);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error(`Error getting financial year ${year} data:`, error);
+    return [];
+  }
+};
+
+export const saveFinancialYearData = async (year: string, data: any): Promise<void> => {
+  try {
+    localStorage.setItem(`financialYear_${year}`, JSON.stringify(data));
+  } catch (error) {
+    console.error(`Error saving financial year ${year} data:`, error);
+  }
+};
+
+export const getAllFinancialYears = async (): Promise<string[]> => {
+  try {
+    const keys = Object.keys(localStorage);
+    return keys
+      .filter(key => key.startsWith('financialYear_'))
+      .map(key => key.replace('financialYear_', ''))
+      .sort((a, b) => b.localeCompare(a)); // Sort in descending order (latest first)
+  } catch (error) {
+    console.error('Error getting all financial years:', error);
+    return [];
+  }
+};
+
+export const archiveCurrentFinancialYear = async (year: string): Promise<void> => {
+  try {
+    const invoices = await getItems('invoices');
+    const products = await getItems('products');
+    const customers = await getItems('customers');
+    const currentSeller = await getSetting('currentSeller');
+    
+    const archiveData = {
+      year,
+      archivedDate: new Date().toISOString(),
+      invoices,
+      products,
+      customers,
+      currentSeller,
+      summary: {
+        totalInvoices: invoices.length,
+        totalAmount: invoices.reduce((sum: number, inv: any) => sum + (inv.totalAmount || 0), 0)
+      }
+    };
+    
+    await saveFinancialYearData(year, archiveData);
+  } catch (error) {
+    console.error(`Error archiving financial year ${year}:`, error);
+    throw error;
+  }
 };
 
 // Functions for export/import
