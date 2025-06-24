@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Card } from '@/components/ui/card';
@@ -8,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { User, Store, Printer, Database, Building2, Image, X } from 'lucide-react';
+import { User, Store, Printer, Database, Building2, Image, X, Edit } from 'lucide-react';
 import { Customer } from '@/types';
 
 const Settings = () => {
@@ -22,6 +23,10 @@ const Settings = () => {
   const [email, setEmail] = useState(currentSeller?.email || '');
   const [pan, setPan] = useState(currentSeller?.pan || '');
   const [logo, setLogo] = useState(currentSeller?.logo || '');
+  
+  // Edit states
+  const [isEditingBusiness, setIsEditingBusiness] = useState(false);
+  const [isEditingBanking, setIsEditingBanking] = useState(false);
   
   // Print settings (these would be saved to settings in a full implementation)
   const [enableHeaderLogo, setEnableHeaderLogo] = useState(true);
@@ -89,7 +94,58 @@ const Settings = () => {
     };
     
     setCurrentSeller(seller);
+    setIsEditingBusiness(false);
     toast.success('Business details saved successfully');
+  };
+
+  const handleSaveBankDetails = () => {
+    // Create a new Customer object if none exists, otherwise update the current one
+    const seller: Customer = currentSeller ? { ...currentSeller } : {
+      id: `seller-${Date.now()}`,
+      name: '',
+      address: '',
+      gstin: '',
+      state: '',
+      stateCode: '',
+      contact: '',
+      email: '',
+      pan: ''
+    };
+
+    // Update bank details
+    seller.bankDetails = {
+      bankName,
+      accountNumber,
+      branch,
+      ifscCode
+    };
+    
+    setCurrentSeller(seller);
+    setIsEditingBanking(false);
+    toast.success('Bank details saved successfully');
+  };
+
+  const handleCancelBusinessEdit = () => {
+    // Reset to current values
+    setBusinessName(currentSeller?.name || '');
+    setBusinessAddress(currentSeller?.address || '');
+    setGstin(currentSeller?.gstin || '');
+    setState(currentSeller?.state || '');
+    setStateCode(currentSeller?.stateCode || '');
+    setContact(currentSeller?.contact || '');
+    setEmail(currentSeller?.email || '');
+    setPan(currentSeller?.pan || '');
+    setLogo(currentSeller?.logo || '');
+    setIsEditingBusiness(false);
+  };
+
+  const handleCancelBankingEdit = () => {
+    // Reset to current values
+    setBankName(currentSeller?.bankDetails?.bankName || '');
+    setAccountNumber(currentSeller?.bankDetails?.accountNumber || '');
+    setIfscCode(currentSeller?.bankDetails?.ifscCode || '');
+    setBranch(currentSeller?.bankDetails?.branch || '');
+    setIsEditingBanking(false);
   };
 
   const handleSavePrintSettings = () => {
@@ -128,7 +184,24 @@ const Settings = () => {
 
         <TabsContent value="business" className="space-y-6">
           <Card className="p-6">
-            <h3 className="text-lg font-medium mb-6">Business Information</h3>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-medium">Business Information</h3>
+              {!isEditingBusiness ? (
+                <Button variant="outline" onClick={() => setIsEditingBusiness(true)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit
+                </Button>
+              ) : (
+                <div className="space-x-2">
+                  <Button variant="outline" onClick={handleCancelBusinessEdit}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSaveBusinessDetails}>
+                    Save Changes
+                  </Button>
+                </div>
+              )}
+            </div>
             
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -139,6 +212,8 @@ const Settings = () => {
                     value={businessName}
                     onChange={(e) => setBusinessName(e.target.value)}
                     placeholder="Your Company Name"
+                    readOnly={!isEditingBusiness}
+                    className={!isEditingBusiness ? "bg-gray-50" : ""}
                   />
                 </div>
                 
@@ -149,6 +224,8 @@ const Settings = () => {
                     value={gstin}
                     onChange={(e) => setGstin(e.target.value)}
                     placeholder="22AAAAA0000A1Z5"
+                    readOnly={!isEditingBusiness}
+                    className={!isEditingBusiness ? "bg-gray-50" : ""}
                   />
                 </div>
               </div>
@@ -161,6 +238,8 @@ const Settings = () => {
                   onChange={(e) => setBusinessAddress(e.target.value)}
                   placeholder="Complete address with pincode"
                   rows={3}
+                  readOnly={!isEditingBusiness}
+                  className={!isEditingBusiness ? "bg-gray-50" : ""}
                 />
               </div>
               
@@ -172,6 +251,8 @@ const Settings = () => {
                     value={state}
                     onChange={(e) => setState(e.target.value)}
                     placeholder="Maharashtra"
+                    readOnly={!isEditingBusiness}
+                    className={!isEditingBusiness ? "bg-gray-50" : ""}
                   />
                 </div>
                 
@@ -182,6 +263,8 @@ const Settings = () => {
                     value={stateCode}
                     onChange={(e) => setStateCode(e.target.value)}
                     placeholder="27"
+                    readOnly={!isEditingBusiness}
+                    className={!isEditingBusiness ? "bg-gray-50" : ""}
                   />
                 </div>
               </div>
@@ -194,6 +277,8 @@ const Settings = () => {
                     value={contact}
                     onChange={(e) => setContact(e.target.value)}
                     placeholder="+91 9876543210"
+                    readOnly={!isEditingBusiness}
+                    className={!isEditingBusiness ? "bg-gray-50" : ""}
                   />
                 </div>
                 
@@ -205,6 +290,8 @@ const Settings = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="contact@yourcompany.com"
+                    readOnly={!isEditingBusiness}
+                    className={!isEditingBusiness ? "bg-gray-50" : ""}
                   />
                 </div>
               </div>
@@ -216,45 +303,58 @@ const Settings = () => {
                   value={pan}
                   onChange={(e) => setPan(e.target.value)}
                   placeholder="AAAAA0000A"
+                  readOnly={!isEditingBusiness}
+                  className={!isEditingBusiness ? "bg-gray-50" : ""}
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label>Company Logo</Label>
-                {logo ? (
-                  <div className="relative inline-block">
+              {isEditingBusiness && (
+                <div className="space-y-2">
+                  <Label>Company Logo</Label>
+                  {logo ? (
+                    <div className="relative inline-block">
+                      <img 
+                        src={logo} 
+                        alt="Company Logo" 
+                        className="h-32 w-auto object-contain border rounded p-2" 
+                      />
+                      <Button 
+                        variant="destructive" 
+                        size="icon" 
+                        className="absolute top-1 right-1 h-6 w-6"
+                        onClick={handleRemoveLogo}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="border border-dashed border-gray-300 rounded p-6 text-center">
+                      <Image className="mx-auto h-8 w-8 text-gray-400" />
+                      <p className="mt-2 text-sm text-gray-500">Upload your company logo</p>
+                      <Input 
+                        id="logo" 
+                        type="file" 
+                        accept="image/*"
+                        className="mt-4"
+                        onChange={handleLogoUpload}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!isEditingBusiness && logo && (
+                <div className="space-y-2">
+                  <Label>Company Logo</Label>
+                  <div className="inline-block">
                     <img 
                       src={logo} 
                       alt="Company Logo" 
                       className="h-32 w-auto object-contain border rounded p-2" 
                     />
-                    <Button 
-                      variant="destructive" 
-                      size="icon" 
-                      className="absolute top-1 right-1 h-6 w-6"
-                      onClick={handleRemoveLogo}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
                   </div>
-                ) : (
-                  <div className="border border-dashed border-gray-300 rounded p-6 text-center">
-                    <Image className="mx-auto h-8 w-8 text-gray-400" />
-                    <p className="mt-2 text-sm text-gray-500">Upload your company logo</p>
-                    <Input 
-                      id="logo" 
-                      type="file" 
-                      accept="image/*"
-                      className="mt-4"
-                      onChange={handleLogoUpload}
-                    />
-                  </div>
-                )}
-              </div>
-              
-              <Button onClick={handleSaveBusinessDetails} className="mt-4">
-                Save Business Details
-              </Button>
+                </div>
+              )}
             </div>
           </Card>
         </TabsContent>
@@ -399,10 +499,29 @@ const Settings = () => {
 
         <TabsContent value="banking" className="space-y-6">
           <Card className="p-6">
-            <h3 className="text-lg font-medium mb-6">Bank Account Details</h3>
-            <p className="text-sm text-gray-500 mb-6">
-              These details will appear on your invoices for payments
-            </p>
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-lg font-medium">Bank Account Details</h3>
+                <p className="text-sm text-gray-500">
+                  These details will appear on your invoices for payments
+                </p>
+              </div>
+              {!isEditingBanking ? (
+                <Button variant="outline" onClick={() => setIsEditingBanking(true)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit
+                </Button>
+              ) : (
+                <div className="space-x-2">
+                  <Button variant="outline" onClick={handleCancelBankingEdit}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSaveBankDetails}>
+                    Save Changes
+                  </Button>
+                </div>
+              )}
+            </div>
             
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -413,6 +532,8 @@ const Settings = () => {
                     value={bankName}
                     onChange={(e) => setBankName(e.target.value)}
                     placeholder="State Bank of India"
+                    readOnly={!isEditingBanking}
+                    className={!isEditingBanking ? "bg-gray-50" : ""}
                   />
                 </div>
                 
@@ -423,6 +544,8 @@ const Settings = () => {
                     value={accountNumber}
                     onChange={(e) => setAccountNumber(e.target.value)}
                     placeholder="1234567890"
+                    readOnly={!isEditingBanking}
+                    className={!isEditingBanking ? "bg-gray-50" : ""}
                   />
                 </div>
               </div>
@@ -435,6 +558,8 @@ const Settings = () => {
                     value={ifscCode}
                     onChange={(e) => setIfscCode(e.target.value)}
                     placeholder="SBIN0001234"
+                    readOnly={!isEditingBanking}
+                    className={!isEditingBanking ? "bg-gray-50" : ""}
                   />
                 </div>
                 
@@ -445,13 +570,11 @@ const Settings = () => {
                     value={branch}
                     onChange={(e) => setBranch(e.target.value)}
                     placeholder="Mumbai Main Branch"
+                    readOnly={!isEditingBanking}
+                    className={!isEditingBanking ? "bg-gray-50" : ""}
                   />
                 </div>
               </div>
-              
-              <Button onClick={handleSaveBusinessDetails} className="mt-4">
-                Save Bank Details
-              </Button>
             </div>
           </Card>
         </TabsContent>
