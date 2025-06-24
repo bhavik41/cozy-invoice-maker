@@ -168,8 +168,9 @@ const FinancialYear = () => {
       if (selectedExportYear && selectedExportYear !== 'current') {
         // Export from archived year
         const archiveData = await storage.getFinancialYearData(selectedExportYear);
-        if (archiveData && archiveData.invoices && Array.isArray(archiveData.invoices)) {
-          invoicesToExport = archiveData.invoices;
+        // Since getFinancialYearData returns any[], we need to handle it as the archived data object
+        if (archiveData && typeof archiveData === 'object' && (archiveData as any).invoices && Array.isArray((archiveData as any).invoices)) {
+          invoicesToExport = (archiveData as any).invoices;
         }
       } else {
         // Export from current invoices
