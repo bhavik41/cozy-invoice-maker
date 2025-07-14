@@ -18,7 +18,9 @@ const ProductCreate = () => {
     name: '',
     description: '',
     hsnCode: '',
-    gstRate: '',
+    cgst: '',
+    sgst: '',
+    igst: '',
     price: '',
     unit: 'Piece',
   });
@@ -52,10 +54,19 @@ const ProductCreate = () => {
       newErrors.hsnCode = 'HSN/SAC code is required';
     }
     
-    if (!formData.gstRate.trim()) {
-      newErrors.gstRate = 'GST rate is required';
-    } else if (isNaN(Number(formData.gstRate)) || Number(formData.gstRate) < 0) {
-      newErrors.gstRate = 'GST rate must be a positive number';
+    // Validate CGST
+    if (formData.cgst.trim() && (isNaN(Number(formData.cgst)) || Number(formData.cgst) < 0)) {
+      newErrors.cgst = 'CGST rate must be a positive number';
+    }
+    
+    // Validate SGST
+    if (formData.sgst.trim() && (isNaN(Number(formData.sgst)) || Number(formData.sgst) < 0)) {
+      newErrors.sgst = 'SGST rate must be a positive number';
+    }
+    
+    // Validate IGST
+    if (formData.igst.trim() && (isNaN(Number(formData.igst)) || Number(formData.igst) < 0)) {
+      newErrors.igst = 'IGST rate must be a positive number';
     }
     
     if (!formData.price.trim()) {
@@ -80,12 +91,21 @@ const ProductCreate = () => {
       return;
     }
     
+    // Calculate total GST rate
+    const cgstRate = formData.cgst ? Number(formData.cgst) : 0;
+    const sgstRate = formData.sgst ? Number(formData.sgst) : 0;
+    const igstRate = formData.igst ? Number(formData.igst) : 0;
+    const totalGstRate = cgstRate + sgstRate + igstRate;
+
     const newProduct = {
       id: generateId(),
       name: formData.name,
       description: formData.description,
       hsnCode: formData.hsnCode,
-      gstRate: Number(formData.gstRate),
+      gstRate: totalGstRate,
+      cgst: cgstRate,
+      sgst: sgstRate,
+      igst: igstRate,
       price: Number(formData.price),
       unit: formData.unit,
       createdAt: new Date(),
@@ -156,21 +176,52 @@ const ProductCreate = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="gstRate">
-                  GST Rate (%) <span className="text-red-500">*</span>
-                </Label>
+                <Label htmlFor="cgst">CGST Rate (%)</Label>
                 <Input
-                  id="gstRate"
-                  name="gstRate"
+                  id="cgst"
+                  name="cgst"
                   type="number"
                   step="0.01"
-                  value={formData.gstRate}
+                  value={formData.cgst}
                   onChange={handleChange}
-                  placeholder="Enter GST rate"
-                  className={errors.gstRate ? 'border-red-500' : ''}
+                  placeholder="Enter CGST rate"
+                  className={errors.cgst ? 'border-red-500' : ''}
                 />
-                {errors.gstRate && <p className="text-red-500 text-sm">{errors.gstRate}</p>}
+                {errors.cgst && <p className="text-red-500 text-sm">{errors.cgst}</p>}
               </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="sgst">SGST Rate (%)</Label>
+                <Input
+                  id="sgst"
+                  name="sgst"
+                  type="number"
+                  step="0.01"
+                  value={formData.sgst}
+                  onChange={handleChange}
+                  placeholder="Enter SGST rate"
+                  className={errors.sgst ? 'border-red-500' : ''}
+                />
+                {errors.sgst && <p className="text-red-500 text-sm">{errors.sgst}</p>}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="igst">IGST Rate (%)</Label>
+                <Input
+                  id="igst"
+                  name="igst"
+                  type="number"
+                  step="0.01"
+                  value={formData.igst}
+                  onChange={handleChange}
+                  placeholder="Enter IGST rate"
+                  className={errors.igst ? 'border-red-500' : ''}
+                />
+                {errors.igst && <p className="text-red-500 text-sm">{errors.igst}</p>}
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               
               <div className="space-y-2">
                 <Label htmlFor="price">

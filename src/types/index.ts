@@ -5,6 +5,9 @@ export interface Product {
   description: string;
   hsnCode: string;
   gstRate: number;
+  cgst?: number;
+  sgst?: number;
+  igst?: number;
   price: number;
   unit: string;
   createdAt: Date;
