@@ -40,6 +40,9 @@ export interface InvoiceItem {
   productName: string;
   hsnCode: string;
   gstRate: number;
+  cgst?: number;
+  sgst?: number;
+  igst?: number;
   quantity: number;
   price: number;
   amount: number;

@@ -491,30 +491,33 @@ const InvoiceDetail = () => {
             </thead>
             <tbody>
               {(invoice.items || []).map((item) => {
-                const gstRate = item.gstRate || 0;
                 const amount = item.amount || 0;
-                const taxableValue = amount / (1 + gstRate / 100);
-                const totalTax = taxableValue * (gstRate / 100);
-                const centralTaxAmount = useIGST ? 0 : totalTax / 2;
-                const stateTaxAmount = useIGST ? 0 : totalTax / 2;
-                const igstAmount = useIGST ? totalTax : 0;
+                // Use individual tax rates from the item if available
+                const cgstRate = (item as any)?.cgst || 0;
+                const sgstRate = (item as any)?.sgst || 0;
+                const igstRate = (item as any)?.igst || 0;
+                
+                const cgstAmount = amount * cgstRate / 100;
+                const sgstAmount = amount * sgstRate / 100;
+                const igstAmount = amount * igstRate / 100;
+                const totalTax = cgstAmount + sgstAmount + igstAmount;
                 
                 return (
                   <tr key={`tax-${item.id}`}>
                     <td className="border p-1 text-center">{item.hsnCode || 'N/A'}</td>
-                    <td className="border p-1 text-right">{formatCurrency(taxableValue).replace('₹', '')}</td>
+                    <td className="border p-1 text-right">{formatCurrency(amount).replace('₹', '')}</td>
                     
                     {useIGST ? (
                       <>
-                        <td className="border p-1 text-center">{gstRate}%</td>
+                        <td className="border p-1 text-center">{igstRate}%</td>
                         <td className="border p-1 text-right">{formatCurrency(igstAmount).replace('₹', '')}</td>
                       </>
                     ) : (
                       <>
-                        <td className="border p-1 text-center">{gstRate / 2}%</td>
-                        <td className="border p-1 text-right">{formatCurrency(centralTaxAmount).replace('₹', '')}</td>
-                        <td className="border p-1 text-center">{gstRate / 2}%</td>
-                        <td className="border p-1 text-right">{formatCurrency(stateTaxAmount).replace('₹', '')}</td>
+                        <td className="border p-1 text-center">{cgstRate}%</td>
+                        <td className="border p-1 text-right">{formatCurrency(cgstAmount).replace('₹', '')}</td>
+                        <td className="border p-1 text-center">{sgstRate}%</td>
+                        <td className="border p-1 text-right">{formatCurrency(sgstAmount).replace('₹', '')}</td>
                       </>
                     )}
                     
@@ -531,14 +534,14 @@ const InvoiceDetail = () => {
                 {useIGST ? (
                   <>
                     <td className="border p-1"></td>
-                    <td className="border p-1 text-right font-bold">{formatCurrency(invoice.totalTaxAmount || 0).replace('₹', '')}</td>
+                    <td className="border p-1 text-right font-bold">{formatCurrency(invoice.igstAmount || 0).replace('₹', '')}</td>
                   </>
                 ) : (
                   <>
                     <td className="border p-1"></td>
-                    <td className="border p-1 text-right font-bold">{formatCurrency((invoice.totalTaxAmount || 0) / 2).replace('₹', '')}</td>
+                    <td className="border p-1 text-right font-bold">{formatCurrency(invoice.cgstAmount || 0).replace('₹', '')}</td>
                     <td className="border p-1"></td>
-                    <td className="border p-1 text-right font-bold">{formatCurrency((invoice.totalTaxAmount || 0) / 2).replace('₹', '')}</td>
+                    <td className="border p-1 text-right font-bold">{formatCurrency(invoice.sgstAmount || 0).replace('₹', '')}</td>
                   </>
                 )}
                 

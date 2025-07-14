@@ -273,7 +273,11 @@ const InvoiceCreate: React.FC<InvoiceCreateProps> = ({ isEditMode = false }) => 
           if (selectedProduct) {
             updatedItem.productName = selectedProduct.name;
             updatedItem.hsnCode = selectedProduct.hsnCode || '';
+            // Use individual tax rates if available, otherwise use total gstRate
             updatedItem.gstRate = selectedProduct.gstRate || 0;
+            updatedItem.cgst = selectedProduct.cgst || 0;
+            updatedItem.sgst = selectedProduct.sgst || 0;
+            updatedItem.igst = selectedProduct.igst || 0;
             updatedItem.price = selectedProduct.price || 0;
             updatedItem.amount = updatedItem.quantity * (selectedProduct.price || 0);
           }
@@ -301,29 +305,19 @@ const InvoiceCreate: React.FC<InvoiceCreateProps> = ({ isEditMode = false }) => 
     let sgst = 0;
     let igst = 0;
     
-    let buyerStateCode = '';
-    
-    if (useExistingBuyer && buyerId) {
-      const buyer = getCustomer(buyerId);
-      if (buyer) {
-        buyerStateCode = buyer.stateCode;
-      }
-    } else {
-      buyerStateCode = form.getValues('buyerStateCode') || '';
-    }
-    
     items.forEach(item => {
-      const itemTaxAmount = parseFloat((item.amount * item.gstRate / 100).toFixed(2));
-      totalTax += itemTaxAmount;
+      // Use individual tax rates from the product if available
+      const itemCgst = (item.cgst || 0) * item.amount / 100;
+      const itemSgst = (item.sgst || 0) * item.amount / 100;
+      const itemIgst = (item.igst || 0) * item.amount / 100;
       
-      if (currentSeller) {
-        if (buyerStateCode && buyerStateCode === currentSeller.stateCode) {
-          cgst += parseFloat((itemTaxAmount / 2).toFixed(2));
-          sgst += parseFloat((itemTaxAmount / 2).toFixed(2));
-        } else {
-          igst += itemTaxAmount;
-        }
-      }
+      // Add individual tax amounts
+      cgst += itemCgst;
+      sgst += itemSgst;
+      igst += itemIgst;
+      
+      // Total tax is sum of all three
+      totalTax += itemCgst + itemSgst + itemIgst;
     });
     
     setTotalTaxAmount(parseFloat(totalTax.toFixed(2)));
