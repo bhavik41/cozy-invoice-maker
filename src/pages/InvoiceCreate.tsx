@@ -382,8 +382,8 @@ const InvoiceCreate: React.FC<InvoiceCreateProps> = ({ isEditMode = false }) => 
     const igstRate = buyerStateCode !== currentSeller.stateCode ? 
       Math.max(...invoiceItems.map(item => item.gstRate), 0) : 0;
 
-    const totalAmountInWords = `${totalAmount + totalTaxAmount} Rupees Only`;
-    const totalTaxAmountInWords = `${totalTaxAmount} Rupees Only`;
+    const totalAmountInWords = `${Math.round(totalAmount + totalTaxAmount)} Rupees Only`;
+    const totalTaxAmountInWords = `${Math.round(totalTaxAmount)} Rupees Only`;
 
     const newInvoice = {
       id: isEditMode && invoiceId ? invoiceId : uuidv4(),

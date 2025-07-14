@@ -438,7 +438,17 @@ const InvoiceDetail = () => {
                   )}
                   <p>Round Off</p>
                 </td>
-                <td className="border p-1 text-right">{formatCurrency(invoice.totalTaxAmount || 0).replace('₹', '')}</td>
+                <td className="border p-1 text-right">
+                  {useIGST ? (
+                    <p>{formatCurrency(invoice.igstAmount || 0).replace('₹', '')}</p>
+                  ) : (
+                    <>
+                      <p>{formatCurrency(invoice.cgstAmount || 0).replace('₹', '')}</p>
+                      <p>{formatCurrency(invoice.sgstAmount || 0).replace('₹', '')}</p>
+                    </>
+                  )}
+                  <p>0.00</p>
+                </td>
               </tr>
             </tbody>
             <tfoot>
@@ -453,7 +463,7 @@ const InvoiceDetail = () => {
         {/* Amount in Words */}
         <div className="border-t p-1">
           <p className="font-medium">Amount Chargeable (In words)</p>
-          <p className="font-bold">Rupees {invoice.totalAmountInWords || 'N/A'} Only</p>
+          <p className="font-bold">{invoice.totalAmountInWords || 'N/A'}</p>
         </div>
         
         {/* Tax Summary Table */}
