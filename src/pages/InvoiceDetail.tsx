@@ -389,7 +389,9 @@ const InvoiceDetail = () => {
                 <th className="border p-1 text-left">No.</th>
                 <th className="border p-1 text-left">Description of Goods</th>
                 <th className="border p-1 text-center">HSN/SAC</th>
-                <th className="border p-1 text-center">GST Rate</th>
+                <th className="border p-1 text-center">CGST %</th>
+                <th className="border p-1 text-center">SGST %</th>
+                <th className="border p-1 text-center">IGST %</th>
                 <th className="border p-1 text-center">Quantity</th>
                 <th className="border p-1 text-center">Rate per Unit</th>
                 <th className="border p-1 text-right">Amount</th>
@@ -401,7 +403,9 @@ const InvoiceDetail = () => {
                   <td className="border p-1 text-center">{index + 1}</td>
                   <td className="border p-1">{item.productName || 'N/A'}</td>
                   <td className="border p-1 text-center">{item.hsnCode || 'N/A'}</td>
-                  <td className="border p-1 text-center">{item.gstRate || 0}%</td>
+                  <td className="border p-1 text-center">{item.cgst || 0}%</td>
+                  <td className="border p-1 text-center">{item.sgst || 0}%</td>
+                  <td className="border p-1 text-center">{item.igst || 0}%</td>
                   <td className="border p-1 text-center">{Number(item.quantity || 0).toFixed(3)}</td>
                   <td className="border p-1 text-right">{item.price || 0}</td>
                   <td className="border p-1 text-right">{formatCurrency(item.amount || 0).replace('₹', '')}</td>
@@ -410,13 +414,13 @@ const InvoiceDetail = () => {
               
               {/* Subtotal row */}
               <tr>
-                <td colSpan={6} className="border p-1 text-right font-medium">Total</td>
+                <td colSpan={8} className="border p-1 text-right font-medium">Total</td>
                 <td className="border p-1 text-right font-bold">{formatCurrency((invoice.totalAmount || 0) - (invoice.totalTaxAmount || 0)).replace('₹', '')}</td>
               </tr>
               
               {/* Tax calculations */}
               <tr>
-                <td colSpan={3} className="border p-1">
+                <td colSpan={5} className="border p-1">
                   {useIGST ? (
                     <p className="text-center">IGST @ {invoice.igstRate || 0}%</p>
                   ) : (
@@ -452,8 +456,8 @@ const InvoiceDetail = () => {
               </tr>
             </tbody>
             <tfoot>
-              <tr>
-                <td colSpan={6} className="border p-1 text-right font-bold">Total</td>
+              <tr className="bg-gray-100">
+                <td colSpan={8} className="border p-1 text-right font-bold">Total Amount</td>
                 <td className="border p-1 text-right font-bold">{formatCurrency(invoice.totalAmount || 0).replace('₹', '')}</td>
               </tr>
             </tfoot>

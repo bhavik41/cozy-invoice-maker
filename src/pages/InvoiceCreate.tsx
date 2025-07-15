@@ -932,10 +932,12 @@ const InvoiceCreate: React.FC<InvoiceCreateProps> = ({ isEditMode = false }) => 
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="grid grid-cols-12 gap-2 text-sm font-medium text-gray-500 px-2">
+                    <div className="grid grid-cols-14 gap-2 text-sm font-medium text-gray-500 px-2">
                       <div className="col-span-3">Product</div>
                       <div className="col-span-2">HSN Code</div>
-                      <div className="col-span-1">GST%</div>
+                      <div className="col-span-1">CGST%</div>
+                      <div className="col-span-1">SGST%</div>
+                      <div className="col-span-1">IGST%</div>
                       <div className="col-span-2">Quantity</div>
                       <div className="col-span-2">Price</div>
                       <div className="col-span-1">Amount</div>
@@ -943,7 +945,7 @@ const InvoiceCreate: React.FC<InvoiceCreateProps> = ({ isEditMode = false }) => 
                     </div>
                     
                     {invoiceItems.map((item, index) => (
-                      <div key={item.id} className="grid grid-cols-12 gap-2 items-center">
+                      <div key={item.id} className="grid grid-cols-14 gap-2 items-center">
                         <div className="col-span-3">
                           <Select
                             value={item.productId}
@@ -978,9 +980,27 @@ const InvoiceCreate: React.FC<InvoiceCreateProps> = ({ isEditMode = false }) => 
                         
                         <div className="col-span-1">
                           <Input
-                            value={item.gstRate || 0}
+                            value={item.cgst || 0}
                             type="number"
-                            onChange={(e) => updateItem(item.id, 'gstRate', parseFloat(e.target.value))}
+                            onChange={(e) => updateItem(item.id, 'cgst', parseFloat(e.target.value))}
+                            disabled
+                          />
+                        </div>
+                        
+                        <div className="col-span-1">
+                          <Input
+                            value={item.sgst || 0}
+                            type="number"
+                            onChange={(e) => updateItem(item.id, 'sgst', parseFloat(e.target.value))}
+                            disabled
+                          />
+                        </div>
+                        
+                        <div className="col-span-1">
+                          <Input
+                            value={item.igst || 0}
+                            type="number"
+                            onChange={(e) => updateItem(item.id, 'igst', parseFloat(e.target.value))}
                             disabled
                           />
                         </div>
