@@ -144,7 +144,9 @@ const ProductList = () => {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>HSN/SAC</TableHead>
-                  <TableHead>GST Rate</TableHead>
+                  <TableHead>CGST %</TableHead>
+                  <TableHead>SGST %</TableHead>
+                  <TableHead>IGST %</TableHead>
                   <TableHead>Price</TableHead>
                   <TableHead>Unit</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -160,7 +162,9 @@ const ProductList = () => {
                       <p className="text-xs text-gray-500">{product.description}</p>
                     </TableCell>
                     <TableCell>{product.hsnCode}</TableCell>
-                    <TableCell>{product.gstRate}%</TableCell>
+                    <TableCell>{product.cgst || 0}%</TableCell>
+                    <TableCell>{product.sgst || 0}%</TableCell>
+                    <TableCell>{product.igst || 0}%</TableCell>
                     <TableCell>{formatCurrency(product.price)}</TableCell>
                     <TableCell>{product.unit}</TableCell>
                     <TableCell className="text-right">
