@@ -467,7 +467,7 @@ const InvoiceDetail = () => {
         {/* Amount in Words */}
         <div className="border-t p-1">
           <p className="font-medium">Amount Chargeable (In words):</p>
-          <p className="font-bold">INR {invoice.totalAmountInWords || 'N/A'} Only</p>
+          <p className="font-bold">INR {invoice.totalAmountInWords || 'N/A'} Rupees Only</p>
         </div>
         
         {/* Tax Summary Table */}
@@ -568,7 +568,7 @@ const InvoiceDetail = () => {
         {/* Tax Amount in Words */}
         <div className="border-t p-1">
           <p className="font-medium">Tax Amount (In words):</p>
-          <p className="font-bold">INR {invoice.totalTaxAmountInWords || 'N/A'} Only</p>
+          <p className="font-bold">INR {invoice.totalTaxAmountInWords || 'N/A'} Rupees Only</p>
         </div>
         
         {/* Bank Details and Declaration */}

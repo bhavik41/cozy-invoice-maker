@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { ArrowLeft, CalendarIcon, Plus, Trash2, UserPlus } from 'lucide-react';
 
 import { useAppContext } from '@/context/AppContext';
-import { formatCurrency, generateId } from '@/utils/helpers';
+import { formatCurrency, generateId, numberToWords } from '@/utils/helpers';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -382,8 +382,8 @@ const InvoiceCreate: React.FC<InvoiceCreateProps> = ({ isEditMode = false }) => 
     const igstRate = buyerStateCode !== currentSeller.stateCode ? 
       Math.max(...invoiceItems.map(item => item.gstRate), 0) : 0;
 
-    const totalAmountInWords = `${Math.round(totalAmount + totalTaxAmount)} Rupees Only`;
-    const totalTaxAmountInWords = `${Math.round(totalTaxAmount)} Rupees Only`;
+    const totalAmountInWords = numberToWords(Math.round(totalAmount + totalTaxAmount));
+    const totalTaxAmountInWords = numberToWords(Math.round(totalTaxAmount));
 
     const newInvoice = {
       id: isEditMode && invoiceId ? invoiceId : uuidv4(),
