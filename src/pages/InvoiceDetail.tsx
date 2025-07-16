@@ -266,118 +266,97 @@ const InvoiceDetail = () => {
         {/* Seller and Invoice Details */}
         <div className="grid grid-cols-12 border-b">
           {/* Left column - Seller details */}
-          <div className="col-span-6 p-2 border-r seller-details">
+          <div className="col-span-6 p-1 border-r seller-details">
             {/* Centered logo in its own row */}
             {seller.logo && (
-              <div className="logo-container">
+              <div className="logo-container mb-1">
                 <img 
                   src={seller.logo} 
                   alt="Company Logo" 
-                  className="h-16 w-auto object-contain mx-auto"
+                  className="h-12 w-auto object-contain mx-auto"
                 />
               </div>
             )}
-            <h2 className="text-lg font-bold company-name">{seller.name}</h2>
-            <p className="whitespace-pre-line text-sm"><strong>Address:</strong> {seller.address}</p>
-            
-            <div className="text-sm mt-1">
-              <p><strong>GSTIN:</strong> {seller.gstin}</p>
-              <p><strong>State Name:</strong> {seller.state} <strong>Code:</strong> {seller.stateCode}</p>
-              <p><strong>Contact:</strong> {seller.contact}</p>
-              <p><strong>Email:</strong> {seller.email}</p>
-              <p><strong>PAN:</strong> {seller.pan}</p>
-            </div>
+            <h2 className="text-base font-bold company-name mb-1">{seller.name}</h2>
+            <p className="text-xs mb-1"><strong>Address:</strong> {seller.address}</p>
+            <p className="text-xs mb-1"><strong>GSTIN:</strong> {seller.gstin}</p>
+            <p className="text-xs mb-1"><strong>State Name:</strong> {seller.state} <strong>Code:</strong> {seller.stateCode}</p>
+            <p className="text-xs mb-1"><strong>Contact:</strong> {seller.contact}</p>
+            <p className="text-xs mb-1"><strong>Email:</strong> {seller.email}</p>
+            <p className="text-xs"><strong>PAN:</strong> {seller.pan}</p>
           </div>
           
-          {/* Right column - Invoice details */}
-          <div className="col-span-6 p-2">
-            <table className="w-full text-sm border-collapse">
-              <tbody>
-                <tr className="border-b">
-                  <td className="py-1 font-semibold">Invoice No.</td>
-                  <td className="py-1">{invoice.invoiceNumber || 'N/A'}</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-1 font-semibold">E-way Bill No.</td>
-                  <td className="py-1">{invoice.eWayBillNumber || '....'}</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-1 font-semibold">Dated</td>
-                  <td className="py-1">{formatDisplayDate(invoice.date)}</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-1 font-semibold">Mode/Terms of Payment</td>
-                  <td className="py-1">{invoice.modeOfPayment || '....'}</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-1 font-semibold">Reference No. & Date</td>
-                  <td className="py-1">{invoice.reference || '....'}</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-1 font-semibold">Other References</td>
-                  <td className="py-1">{invoice.otherReferences || '....'}</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-1 font-semibold">Buyer's Order No.</td>
-                  <td className="py-1">{invoice.buyerOrderNo || '....'}</td>
-                </tr>
-                <tr>
-                  <td className="py-1 font-semibold">Dated</td>
-                  <td className="py-1">{invoice.dated || '....'}</td>
-                </tr>
-              </tbody>
-            </table>
+          {/* Right column - Invoice details in grid format */}
+          <div className="col-span-6 p-1">
+            <div className="grid grid-cols-6 text-xs border-collapse">
+              {/* Row 1 */}
+              <div className="col-span-2 border p-1 font-semibold">Invoice No.</div>
+              <div className="col-span-2 border p-1">{invoice.invoiceNumber || 'N/A'}</div>
+              <div className="col-span-1 border p-1 font-semibold">E-way Bill No.</div>
+              <div className="col-span-1 border p-1">{invoice.eWayBillNumber || '.....'}</div>
+              
+              {/* Row 2 */}
+              <div className="col-span-2 border p-1 font-semibold">Delivery Note</div>
+              <div className="col-span-2 border p-1">{invoice.deliveryNote || '.....'}</div>
+              <div className="col-span-1 border p-1 font-semibold">Dated:</div>
+              <div className="col-span-1 border p-1">{formatDisplayDate(invoice.date)}</div>
+              
+              {/* Row 3 */}
+              <div className="col-span-2 border p-1 font-semibold">Reference No. & Date</div>
+              <div className="col-span-2 border p-1">{invoice.reference || '.....'}</div>
+              <div className="col-span-2 border p-1 font-semibold">Mode/Terms of Payment</div>
+              
+              {/* Row 4 */}
+              <div className="col-span-2 border p-1 font-semibold">Other References</div>
+              <div className="col-span-2 border p-1">{invoice.otherReferences || '.....'}</div>
+              <div className="col-span-2 border p-1">{invoice.modeOfPayment || '.....'}</div>
+              
+              {/* Row 5 */}
+              <div className="col-span-2 border p-1 font-semibold">Buyer's Order No.</div>
+              <div className="col-span-2 border p-1">{invoice.buyerOrderNo || '.....'}</div>
+              <div className="col-span-1 border p-1 font-semibold">Dated</div>
+              <div className="col-span-1 border p-1">{invoice.dated || '.....'}</div>
+            </div>
           </div>
         </div>
         
         {/* Buyer and Shipping Details */}
         <div className="grid grid-cols-12 border-b">
           {/* Left column - Buyer details */}
-          <div className="col-span-6 p-2 border-r buyer-details">
-            <h3 className="font-bold mb-1">Buyer (Bill To):</h3>
-            <p className="font-medium mb-1">{buyer.name}</p>
-            <p className="text-sm mb-1"><strong>Address:</strong> {buyer.address}</p>
-            
-            <div className="text-sm">
-              <p><strong>GSTIN:</strong> {buyer.gstin}</p>
-              <p><strong>State:</strong> {buyer.state} <strong>Code:</strong> {buyer.stateCode}</p>
-            </div>
+          <div className="col-span-6 p-1 border-r buyer-details">
+            <h3 className="font-bold text-xs mb-1">Buyer (Bill To):</h3>
+            <p className="font-medium text-xs mb-1"><strong>Buyer Name:</strong> {buyer.name}</p>
+            <p className="text-xs mb-1"><strong>Address:</strong> {buyer.address}</p>
+            <p className="text-xs mb-1"><strong>GSTIN:</strong> {buyer.gstin}</p>
+            <p className="text-xs mb-1"><strong>State:</strong> {buyer.state} <strong>Code:</strong> {buyer.stateCode}</p>
+            <p className="text-xs"><strong>Place of supply:</strong> {buyer.state}</p>
           </div>
           
-          {/* Right column - Shipping details */}
-          <div className="col-span-6 p-2">
-            <table className="w-full text-sm border-collapse">
-              <tbody>
-                <tr className="border-b">
-                  <td className="py-1 font-semibold">Dispatch Document No.</td>
-                  <td className="py-1">{invoice.dispatchDocumentNo || '....'}</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-1 font-semibold">Delivery Note Date</td>
-                  <td className="py-1">{invoice.deliveryNoteDate || formatDisplayDate(invoice.date)}</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-1 font-semibold">Dispatched through</td>
-                  <td className="py-1">{invoice.dispatchedThrough || '....'}</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-1 font-semibold">Destination</td>
-                  <td className="py-1">{invoice.destination || '....'}</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-1 font-semibold">Bill of Lading/LR-RR No.</td>
-                  <td className="py-1">{invoice.billOfLading || '....'}</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-1 font-semibold">Motor Vehicle No.</td>
-                  <td className="py-1">{invoice.motorVehicleNo || '....'}</td>
-                </tr>
-                <tr>
-                  <td className="py-1 font-semibold">Terms of Delivery</td>
-                  <td className="py-1">{invoice.termsOfDelivery || '....'}</td>
-                </tr>
-              </tbody>
-            </table>
+          {/* Right column - Shipping details in grid format */}
+          <div className="col-span-6 p-1">
+            <div className="grid grid-cols-4 text-xs border-collapse">
+              {/* Row 1 */}
+              <div className="col-span-2 border p-1 font-semibold">Dispatch Document No.</div>
+              <div className="col-span-2 border p-1 font-semibold">Delivery Note Date</div>
+              <div className="col-span-2 border p-1">{invoice.dispatchDocumentNo || '.....'}</div>
+              <div className="col-span-2 border p-1">{invoice.deliveryNoteDate || formatDisplayDate(invoice.date)}</div>
+              
+              {/* Row 2 */}
+              <div className="col-span-2 border p-1 font-semibold">Dispatched through</div>
+              <div className="col-span-2 border p-1 font-semibold">Destination</div>
+              <div className="col-span-2 border p-1">{invoice.dispatchedThrough || '.....'}</div>
+              <div className="col-span-2 border p-1">{invoice.destination || '.....'}</div>
+              
+              {/* Row 3 */}
+              <div className="col-span-2 border p-1 font-semibold">Bill of Landing/LR-RR No.</div>
+              <div className="col-span-2 border p-1 font-semibold">Motor Vehicle No.</div>
+              <div className="col-span-2 border p-1">{invoice.billOfLading || '.....'}</div>
+              <div className="col-span-2 border p-1">{invoice.motorVehicleNo || '.....'}</div>
+              
+              {/* Row 4 */}
+              <div className="col-span-4 border p-1 font-semibold">Terms of Delivery</div>
+              <div className="col-span-4 border p-1">{invoice.termsOfDelivery || '.....'}</div>
+            </div>
           </div>
         </div>
         
@@ -386,36 +365,36 @@ const InvoiceDetail = () => {
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-gray-50">
-                <th className="border p-1 text-left">No.</th>
-                <th className="border p-1 text-left">Description of Goods</th>
-                <th className="border p-1 text-center">HSN/SAC</th>
-                <th className="border p-1 text-center">CGST %</th>
-                <th className="border p-1 text-center">SGST %</th>
-                <th className="border p-1 text-center">IGST %</th>
-                <th className="border p-1 text-center">Quantity</th>
-                <th className="border p-1 text-center">Rate per Unit</th>
-                <th className="border p-1 text-right">Amount</th>
+                <th className="border p-1 text-center text-xs">No.</th>
+                <th className="border p-1 text-left text-xs">Description of Goods</th>
+                <th className="border p-1 text-center text-xs">HSN/SAC</th>
+                <th className="border p-1 text-center text-xs">CGST %</th>
+                <th className="border p-1 text-center text-xs">SGST %</th>
+                <th className="border p-1 text-center text-xs">IGST %</th>
+                <th className="border p-1 text-center text-xs">Quantity</th>
+                <th className="border p-1 text-center text-xs">Rate per Unit</th>
+                <th className="border p-1 text-right text-xs">Amount</th>
               </tr>
             </thead>
             <tbody>
               {(invoice.items || []).map((item, index) => (
                 <tr key={item.id}>
-                  <td className="border p-1 text-center">{index + 1}</td>
-                  <td className="border p-1">{item.productName || 'N/A'}</td>
-                  <td className="border p-1 text-center">{item.hsnCode || 'N/A'}</td>
-                  <td className="border p-1 text-center">{item.cgst || 0}%</td>
-                  <td className="border p-1 text-center">{item.sgst || 0}%</td>
-                  <td className="border p-1 text-center">{item.igst || 0}%</td>
-                  <td className="border p-1 text-center">{Number(item.quantity || 0).toFixed(3)}</td>
-                  <td className="border p-1 text-right">{item.price || 0}</td>
-                  <td className="border p-1 text-right">{formatCurrency(item.amount || 0).replace('₹', '')}</td>
+                  <td className="border p-1 text-center text-xs">{index + 1}</td>
+                  <td className="border p-1 text-xs">{item.productName || 'N/A'}</td>
+                  <td className="border p-1 text-center text-xs">{item.hsnCode || 'N/A'}</td>
+                  <td className="border p-1 text-center text-xs">{item.cgst || 0}%</td>
+                  <td className="border p-1 text-center text-xs">{item.sgst || 0}%</td>
+                  <td className="border p-1 text-center text-xs">{item.igst || 0}%</td>
+                  <td className="border p-1 text-center text-xs">{Number(item.quantity || 0).toFixed(3)}</td>
+                  <td className="border p-1 text-right text-xs">{item.price || 0}</td>
+                  <td className="border p-1 text-right text-xs">{formatCurrency(item.amount || 0).replace('₹', '')}</td>
                 </tr>
               ))}
               
               {/* Subtotal row */}
               <tr>
-                <td colSpan={8} className="border p-1 text-right font-medium">Total</td>
-                <td className="border p-1 text-right font-bold">{formatCurrency((invoice.totalAmount || 0) - (invoice.totalTaxAmount || 0)).replace('₹', '')}</td>
+                <td colSpan={8} className="border p-1 text-right text-xs font-medium">Total</td>
+                <td className="border p-1 text-right text-xs font-bold">{formatCurrency((invoice.totalAmount || 0) - (invoice.totalTaxAmount || 0)).replace('₹', '')}</td>
               </tr>
               
               {/* Tax calculations */}
