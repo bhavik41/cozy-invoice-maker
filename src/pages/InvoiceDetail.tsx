@@ -378,23 +378,23 @@ const InvoiceDetail = () => {
             </thead>
             <tbody>
               {(invoice.items || []).map((item, index) => (
-                <tr key={item.id}>
+                <tr key={item.id || index}>
                   <td className="border p-1 text-center text-xs">{index + 1}</td>
                   <td className="border p-1 text-xs">{item.productName || 'N/A'}</td>
                   <td className="border p-1 text-center text-xs">{item.hsnCode || 'N/A'}</td>
                   <td className="border p-1 text-center text-xs">{item.cgst || 0}%</td>
                   <td className="border p-1 text-center text-xs">{item.sgst || 0}%</td>
                   <td className="border p-1 text-center text-xs">{item.igst || 0}%</td>
-                  <td className="border p-1 text-center text-xs">{Number(item.quantity || 0).toFixed(3)}</td>
-                  <td className="border p-1 text-right text-xs">{item.price || 0}</td>
-                  <td className="border p-1 text-right text-xs">{formatCurrency(item.amount || 0).replace('₹', '')}</td>
+                  <td className="border p-1 text-center text-xs">{Number(item.quantity || 0).toLocaleString('en-IN')}</td>
+                  <td className="border p-1 text-right text-xs">₹{Number(item.price || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  <td className="border p-1 text-right text-xs">₹{Number(item.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 </tr>
               ))}
               
               {/* Subtotal row */}
-              <tr>
-                <td colSpan={8} className="border p-1 text-right text-xs font-medium">Total</td>
-                <td className="border p-1 text-right text-xs font-bold">{formatCurrency((invoice.totalAmount || 0) - (invoice.totalTaxAmount || 0)).replace('₹', '')}</td>
+              <tr className="bg-gray-50">
+                <td colSpan={8} className="border p-1 text-right text-xs font-medium">Subtotal</td>
+                <td className="border p-1 text-right text-xs font-bold">₹{Number((invoice.totalAmount || 0) - (invoice.totalTaxAmount || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
               </tr>
               
               {/* Tax calculations */}
