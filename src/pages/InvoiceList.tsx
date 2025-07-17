@@ -41,7 +41,7 @@ const InvoiceList = () => {
   // Filter states
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
-  const [selectedCustomer, setSelectedCustomer] = useState<string>('');
+  const [selectedCustomer, setSelectedCustomer] = useState<string>('all');
   const [minAmount, setMinAmount] = useState<string>('');
   const [maxAmount, setMaxAmount] = useState<string>('');
   
@@ -52,7 +52,7 @@ const InvoiceList = () => {
     const filtered = filterInvoices({
       startDate,
       endDate,
-      customerId: selectedCustomer || undefined,
+      customerId: selectedCustomer && selectedCustomer !== 'all' ? selectedCustomer : undefined,
       minAmount: minAmount ? parseFloat(minAmount) : undefined,
       maxAmount: maxAmount ? parseFloat(maxAmount) : undefined
     });
@@ -131,7 +131,7 @@ const InvoiceList = () => {
   const clearFilters = () => {
     setStartDate(undefined);
     setEndDate(undefined);
-    setSelectedCustomer('');
+    setSelectedCustomer('all');
     setMinAmount('');
     setMaxAmount('');
     setSearchQuery('');
@@ -243,7 +243,7 @@ const InvoiceList = () => {
                     <SelectValue placeholder="Select customer" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Customers</SelectItem>
+                    <SelectItem value="all">All Customers</SelectItem>
                     {customers.map(customer => (
                       <SelectItem key={customer.id} value={customer.id}>
                         {customer.name}
