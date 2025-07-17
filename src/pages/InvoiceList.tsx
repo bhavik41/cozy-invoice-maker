@@ -3,8 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Plus, Search, FileText, Printer, Trash2 } from 'lucide-react';
+import { Plus, Search, FileText, Printer, Trash2, Download, Filter, Calendar } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 import { 
   Table, 
   TableBody, 
@@ -14,7 +20,7 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { useAppContext } from '@/context/AppContext';
-import { formatCurrency, formatDate } from '@/utils/helpers';
+import { formatCurrency, formatDate, exportToCsv } from '@/utils/helpers';
 import {
   Dialog,
   DialogContent,
@@ -26,20 +32,41 @@ import {
 import { toast } from 'sonner';
 
 const InvoiceList = () => {
-  const { invoices, filterInvoices, deleteInvoice, getCustomer } = useAppContext();
+  const { invoices, filterInvoices, deleteInvoice, getCustomer, customers } = useAppContext();
   const [searchQuery, setSearchQuery] = useState('');
   const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
   const [displayedInvoices, setDisplayedInvoices] = useState<any[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Filter states
+  const [startDate, setStartDate] = useState<Date | undefined>();
+  const [endDate, setEndDate] = useState<Date | undefined>();
+  const [selectedCustomer, setSelectedCustomer] = useState<string>('');
+  const [minAmount, setMinAmount] = useState<string>('');
+  const [maxAmount, setMaxAmount] = useState<string>('');
   
   useEffect(() => {
     console.log('Current invoices:', invoices);
-    // For now, we'll just implement a simple search by invoice number
+    
+    // Apply all filters
     const filtered = filterInvoices({
-      // We're not using the real filter fields yet, just searching
-      customerId: searchQuery ? searchQuery : undefined
+      startDate,
+      endDate,
+      customerId: selectedCustomer || undefined,
+      minAmount: minAmount ? parseFloat(minAmount) : undefined,
+      maxAmount: maxAmount ? parseFloat(maxAmount) : undefined
     });
     
-    const processed = filtered.map(invoice => {
+    // Apply search query if present
+    let searchFiltered = filtered;
+    if (searchQuery) {
+      searchFiltered = filtered.filter(invoice => 
+        invoice.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        invoice.buyerName?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    const processed = searchFiltered.map(invoice => {
       // Get customer name from different sources based on if it's a one-time customer
       let buyerName = 'Unknown';
       
@@ -60,7 +87,7 @@ const InvoiceList = () => {
     
     console.log('Filtered and processed invoices:', processed);
     setDisplayedInvoices(processed);
-  }, [invoices, searchQuery, filterInvoices, getCustomer]);
+  }, [invoices, searchQuery, filterInvoices, getCustomer, startDate, endDate, selectedCustomer, minAmount, maxAmount]);
   
   const handleDeleteClick = (id: string) => {
     setInvoiceToDelete(id);
@@ -83,6 +110,33 @@ const InvoiceList = () => {
     window.open(`/invoices/${invoiceId}?print=true`, '_blank');
   };
 
+  const handleExport = () => {
+    const exportData = displayedInvoices.map(invoice => ({
+      'Invoice Number': invoice.invoiceNumber,
+      'Date': formatDate(invoice.date),
+      'Customer': invoice.buyerName,
+      'Amount': invoice.totalAmount,
+      'Tax Amount': invoice.taxAmount || 0,
+      'Total Amount': invoice.totalAmount,
+      'Payment Terms': invoice.paymentTerms || '',
+      'Due Date': invoice.dueDate ? formatDate(invoice.dueDate) : '',
+      'Status': 'Generated'
+    }));
+
+    const filename = `invoices_export_${format(new Date(), 'yyyy-MM-dd')}`;
+    exportToCsv(filename, exportData);
+    toast.success('Invoices exported successfully');
+  };
+
+  const clearFilters = () => {
+    setStartDate(undefined);
+    setEndDate(undefined);
+    setSelectedCustomer('');
+    setMinAmount('');
+    setMaxAmount('');
+    setSearchQuery('');
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -95,17 +149,138 @@ const InvoiceList = () => {
         </Button>
       </div>
       
-      <div className="flex gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-          <Input
-            type="text"
-            placeholder="Search invoices..."
-            className="pl-8"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+      <div className="space-y-4">
+        <div className="flex gap-4 items-center">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+            <Input
+              type="text"
+              placeholder="Search invoices..."
+              className="pl-8"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center gap-2"
+          >
+            <Filter className="h-4 w-4" />
+            Filters
+          </Button>
+          <Button 
+            onClick={handleExport}
+            className="flex items-center gap-2"
+            disabled={displayedInvoices.length === 0}
+          >
+            <Download className="h-4 w-4" />
+            Export ({displayedInvoices.length})
+          </Button>
         </div>
+        
+        {showFilters && (
+          <Card className="p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="space-y-2">
+                <Label>Start Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !startDate && "text-muted-foreground"
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {startDate ? format(startDate, "PPP") : "Pick start date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <CalendarComponent
+                      mode="single"
+                      selected={startDate}
+                      onSelect={setStartDate}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>End Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !endDate && "text-muted-foreground"
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {endDate ? format(endDate, "PPP") : "Pick end date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <CalendarComponent
+                      mode="single"
+                      selected={endDate}
+                      onSelect={setEndDate}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Customer</Label>
+                <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select customer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Customers</SelectItem>
+                    {customers.map(customer => (
+                      <SelectItem key={customer.id} value={customer.id}>
+                        {customer.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Min Amount</Label>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={minAmount}
+                  onChange={(e) => setMinAmount(e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Max Amount</Label>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={maxAmount}
+                  onChange={(e) => setMaxAmount(e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end mt-4">
+              <Button variant="outline" onClick={clearFilters}>
+                Clear Filters
+              </Button>
+            </div>
+          </Card>
+        )}
       </div>
       
       <Card className="p-6">
