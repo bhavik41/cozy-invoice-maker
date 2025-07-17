@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Plus, Search, FileText, Printer, Trash2, Download, Filter, Calendar } from 'lucide-react';
+import { Plus, Search, FileText, Printer, Trash2, Download, Filter, Calendar, FileSpreadsheet, FileDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -30,6 +30,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from 'sonner';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const InvoiceList = () => {
   const { invoices, filterInvoices, deleteInvoice, getCustomer, customers } = useAppContext();
@@ -44,6 +45,9 @@ const InvoiceList = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<string>('all');
   const [minAmount, setMinAmount] = useState<string>('');
   const [maxAmount, setMaxAmount] = useState<string>('');
+  
+  // Selection states
+  const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set());
   
   useEffect(() => {
     console.log('Current invoices:', invoices);
@@ -137,6 +141,61 @@ const InvoiceList = () => {
     setSearchQuery('');
   };
 
+  const handleSelectInvoice = (invoiceId: string, checked: boolean) => {
+    const newSelected = new Set(selectedInvoices);
+    if (checked) {
+      newSelected.add(invoiceId);
+    } else {
+      newSelected.delete(invoiceId);
+    }
+    setSelectedInvoices(newSelected);
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedInvoices(new Set(displayedInvoices.map(invoice => invoice.id)));
+    } else {
+      setSelectedInvoices(new Set());
+    }
+  };
+
+  const exportSelectedToExcel = () => {
+    const selectedData = displayedInvoices
+      .filter(invoice => selectedInvoices.has(invoice.id))
+      .map(invoice => ({
+        'Invoice Number': invoice.invoiceNumber,
+        'Date': formatDate(invoice.date),
+        'Customer': invoice.buyerName,
+        'Amount': invoice.totalAmount,
+        'Tax Amount': invoice.taxAmount || 0,
+        'Total Amount': invoice.totalAmount,
+        'Payment Terms': invoice.paymentTerms || '',
+        'Due Date': invoice.dueDate ? formatDate(invoice.dueDate) : '',
+        'Status': 'Generated'
+      }));
+
+    const filename = `selected_invoices_${format(new Date(), 'yyyy-MM-dd')}`;
+    exportToCsv(filename, selectedData);
+    toast.success(`${selectedData.length} invoices exported to Excel successfully`);
+  };
+
+  const exportSelectedToPdf = () => {
+    const selectedInvoiceIds = Array.from(selectedInvoices);
+    if (selectedInvoiceIds.length === 0) {
+      toast.error('Please select invoices to export');
+      return;
+    }
+    
+    // For now, open each invoice in a new tab for PDF printing
+    selectedInvoiceIds.forEach((invoiceId, index) => {
+      setTimeout(() => {
+        window.open(`/invoices/${invoiceId}?print=true`, '_blank');
+      }, index * 500); // Stagger opening to avoid browser blocking
+    });
+    
+    toast.success(`Opening ${selectedInvoiceIds.length} invoices for PDF export`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -175,9 +234,42 @@ const InvoiceList = () => {
             disabled={displayedInvoices.length === 0}
           >
             <Download className="h-4 w-4" />
-            Export ({displayedInvoices.length})
+            Export All ({displayedInvoices.length})
           </Button>
         </div>
+        
+        {selectedInvoices.size > 0 && (
+          <div className="flex gap-2 items-center p-3 bg-muted rounded-lg">
+            <span className="text-sm font-medium">
+              {selectedInvoices.size} invoice(s) selected
+            </span>
+            <Button 
+              onClick={exportSelectedToExcel}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              Export to Excel
+            </Button>
+            <Button 
+              onClick={exportSelectedToPdf}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <FileDown className="h-4 w-4" />
+              Export to PDF
+            </Button>
+            <Button 
+              onClick={() => setSelectedInvoices(new Set())}
+              variant="ghost"
+              size="sm"
+            >
+              Clear Selection
+            </Button>
+          </div>
+        )}
         
         {showFilters && (
           <Card className="p-4">
@@ -302,6 +394,13 @@ const InvoiceList = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-12">
+                  <Checkbox
+                    checked={displayedInvoices.length > 0 && selectedInvoices.size === displayedInvoices.length}
+                    onCheckedChange={handleSelectAll}
+                    aria-label="Select all invoices"
+                  />
+                </TableHead>
                 <TableHead>Invoice Number</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Customer</TableHead>
@@ -312,6 +411,13 @@ const InvoiceList = () => {
             <TableBody>
               {displayedInvoices.map((invoice) => (
                 <TableRow key={invoice.id}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedInvoices.has(invoice.id)}
+                      onCheckedChange={(checked) => handleSelectInvoice(invoice.id, checked as boolean)}
+                      aria-label={`Select invoice ${invoice.invoiceNumber}`}
+                    />
+                  </TableCell>
                   <TableCell className="font-medium">
                     <Link to={`/invoices/${invoice.id}`} className="hover:underline">
                       {invoice.invoiceNumber}
