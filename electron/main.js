@@ -66,7 +66,7 @@ function createWindow() {
   mainWindow.loadURL(
     isDev
       ? 'http://localhost:8080' // Dev server URL
-      : `file://${path.join(__dirname, '../dist/index.html')}` // Production build
+      : `file://${path.join(__dirname, '../index.html')}` // Production build
   );
 
   // Open DevTools in development
