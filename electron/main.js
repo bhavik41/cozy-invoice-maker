@@ -63,11 +63,12 @@ function createWindow() {
   });
 
   // Load the app
-  mainWindow.loadURL(
-    isDev
-      ? 'http://localhost:8080' // Dev server URL
-      : `file://${path.join(__dirname, '../index.html')}` // Production build
-  );
+  const startUrl = isDev 
+    ? 'http://localhost:8080' 
+    : `file://${path.join(__dirname, '../index.html')}`;
+  
+  console.log('Loading URL:', startUrl);
+  mainWindow.loadURL(startUrl);
 
   // Open DevTools in development
   if (isDev) {
