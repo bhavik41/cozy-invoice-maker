@@ -70,8 +70,20 @@ function createWindow() {
   console.log('Loading URL:', startUrl);
   mainWindow.loadURL(startUrl);
 
+  // Add error handling for loading failures
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+    console.error('Failed to load:', errorCode, errorDescription, validatedURL);
+  });
+
+  mainWindow.webContents.on('dom-ready', () => {
+    console.log('DOM is ready');
+  });
+
   // Open DevTools in development
   if (isDev) {
+    mainWindow.webContents.openDevTools();
+  } else {
+    // Also open DevTools in production to debug
     mainWindow.webContents.openDevTools();
   }
 }
