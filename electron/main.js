@@ -65,7 +65,7 @@ function createWindow() {
   // Load the app
   const startUrl = isDev 
     ? 'http://localhost:8080' 
-    : `file://${path.join(__dirname, '../dist/index.html')}`;
+    : `file://${path.join(__dirname, '../index.html')}`;
   
   console.log('Loading URL:', startUrl);
   mainWindow.loadURL(startUrl);
